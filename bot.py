@@ -1,7 +1,7 @@
 from flask import Flask, request, abort, send_file
 from linebot import (LineBotApi, WebhookHandler)
 from linebot.exceptions import (InvalidSignatureError)
-from linebot.models import (MessageEvent, TextMessage, ImageMessage,
+from linebot.models import (MessageEvent, TextMessage, ImageMessage, ImageSendMessage,
  TextSendMessage, FollowEvent, CarouselTemplate,CarouselColumn, PostbackTemplateAction, TemplateSendMessage, PostbackEvent, QuickReply, QuickReplyButton, PostbackAction, MessageAction)
 import json
 import pymysql
@@ -11,6 +11,7 @@ import random
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+import os
 
 app = Flask(__name__)
 
@@ -43,11 +44,25 @@ text_dict = {
     "Input verifying code": "驗證碼已發送至{email}，請輸入驗證碼",
     "Verified": "已通過驗證",
     "Wrong verifying code": "驗證碼錯誤",
-    "Improper email": "此信箱不是台大學校信箱"
+    "Improper email": "此信箱不是台大學校信箱",
+    "Upload book": "透過底下按鈕選擇填入書籍資料\n請在3分鐘內輸入完畢",
+    "Repeat email": "此信箱已經被註冊過了",
+    "No photo": "目前沒有上傳照片\n請在底下上傳照片",
+    "Upload photo": "以上為目前上傳的照片\n請在底下上傳照片",
+    "Upload successfully": "上傳成功",
+    "Choose categories": "請選擇以下分類",
+    "Choose tags": "目前標籤為：{tags}\n愈刪除請選擇已經有的標籤\n愈添加請選擇沒有加入的標籤\n請選擇以下標籤",
+    "Delete successfully": "已成功刪除 {message}",
+    "Edit book": "請在底下輸入資訊",
+    "Empty column": "書籍資料尚未填妥",
+    "Already have book": "尚有上架書籍未交換成功。若想上架新書請先下架舊書。"
 }
 
 editting_user = ExpiringDict(100, 180)
+uploading_user = ExpiringDict(100, 180)
 verifying_codes = ExpiringDict(100, 180)
+
+cancel_quick_reply_button = QuickReplyButton(action = PostbackAction(label = "取消", data = "action=cancel&type=none"))
 
 @app.route("/bot", methods=["POST"])
 def callback():
@@ -70,7 +85,7 @@ def get_image():
 
     file_name = request.args.get("file_name")
     print(file_name)
-    return send_file(f"static/{file_name}", mimetype = "image/jpeg")
+    return send_file(f"static/book/{file_name}", mimetype = "image/jpeg")
 
 @handler.add(FollowEvent)
 def handle_new_follower(event):
@@ -94,8 +109,12 @@ def handle_change(event: PostbackEvent):
     action = data[0].split("=")[1]
     type = data[1].split("=")[1]
     profile_type = {"lineID": "line ID", "gender": "性別", "expect_gender": "希望配對的性別", "birth_year": "出生年份", "email": "學校 Email"}
-    
+    userID = event.source.user_id
+
     if action == "edit_profile":
+
+        clean_state(userID)
+
         if type == "begin":
             quick_reply = QuickReply(
                 items = [
@@ -103,14 +122,15 @@ def handle_change(event: PostbackEvent):
                     QuickReplyButton(action = PostbackAction(label = "性別", data = "action=edit_profile&type=gender")),
                     QuickReplyButton(action = PostbackAction(label = "希望配對性別", data = "action=edit_profile&type=expect_gender")),
                     QuickReplyButton(action = PostbackAction(label = "出生年份", data = "action=edit_profile&type=birth_year")),
-                    QuickReplyButton(action = PostbackAction(label = "學校 email", data = "action=edit_profile&type=email"))
+                    QuickReplyButton(action = PostbackAction(label = "學校 email", data = "action=edit_profile&type=email")),
+                    cancel_quick_reply_button
                     ])
             return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["How to edit profile"], quick_reply = quick_reply))
         
         elif type == "gender" or type == "expect_gender":
-            editting_user[event.source.user_id] = type
+            editting_user[userID] = type
             cursor = database.cursor()
-            cursor.execute(f"SELECT {type} FROM friends WHERE userID = '{event.source.user_id}';")
+            cursor.execute(f"SELECT {type} FROM friends WHERE userID = '{userID}';")
             result = cursor.fetchall()
             profile = lambda : result[0][0] if result[0][0] != None else "空"
             cursor.close()
@@ -118,7 +138,7 @@ def handle_change(event: PostbackEvent):
                 items = [
                     QuickReplyButton(action = MessageAction(label = "男", text = "男")),
                     QuickReplyButton(action = MessageAction(label = "女", text = "女")),
-                    QuickReplyButton(action = PostbackAction(label = "取消", data = "action=cancel&type=profile"))
+                    cancel_quick_reply_button
                 ]
             )
             return line_bot_api.reply_message(
@@ -130,9 +150,9 @@ def handle_change(event: PostbackEvent):
             )
 
         else:
-            editting_user[event.source.user_id] = type
+            editting_user[userID] = type
             cursor = database.cursor()
-            cursor.execute(f"SELECT {type} FROM friends WHERE userID = '{event.source.user_id}';")
+            cursor.execute(f"SELECT {type} FROM friends WHERE userID = '{userID}';")
             result = cursor.fetchall()
             profile = lambda : result[0][0] if result[0][0] != None else "空"
             cursor.close()
@@ -141,21 +161,146 @@ def handle_change(event: PostbackEvent):
                     event.reply_token,
                     [
                         TextSendMessage(text = text_dict["Present profile"].format(profile_type = profile_type[type], profile = profile())),
-                        TextSendMessage(text = text_dict["Edit profile"].format(profile_type = profile_type[type]) + "\n請輸入西元年", quick_reply = QuickReply(items = [QuickReplyButton(action = PostbackAction(label = "取消", data = "action=cancel&type=profile"))]))
+                        TextSendMessage(text = text_dict["Edit profile"].format(profile_type = profile_type[type]) + "\n請輸入西元年", quick_reply = QuickReply(items = [cancel_quick_reply_button]))
                     ]
                 )
             return line_bot_api.reply_message(
                 event.reply_token,
                 [
                     TextSendMessage(text = text_dict["Present profile"].format(profile_type = profile_type[type], profile = profile())),
-                    TextSendMessage(text = text_dict["Edit profile"].format(profile_type = profile_type[type]), quick_reply = QuickReply(items = [QuickReplyButton(action = PostbackAction(label = "取消", data = "action=cancel&type=profile"))]))
+                    TextSendMessage(text = text_dict["Edit profile"].format(profile_type = profile_type[type]), quick_reply = QuickReply(items = [cancel_quick_reply_button]))
                 ]
             )
 
+    elif action == "upload_book":
+
+        clean_state(userID)
+        cursor = database.cursor()
+        cursor.execute(f"SELECT * FROM books WHERE userID = '{userID}' AND exchanged = 'F';")
+        if len(cursor.fetchall()) != 0:
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Already have book"]))
+        cursor.close()
+
+        if type == "begin":
+            quick_reply = QuickReply(
+                items = [
+                    QuickReplyButton(action = PostbackAction(label = "書名", data = "action=upload_book&type=name")),
+                    QuickReplyButton(action = PostbackAction(label = "心得", data = "action=upload_book&type=summary")),
+                    QuickReplyButton(action = PostbackAction(label = "照片", data = "action=upload_book&type=photo")),
+                    QuickReplyButton(action = PostbackAction(label = "交換方式", data = "action=upload_book&type=exchange_method")),
+                    QuickReplyButton(action = PostbackAction(label = "分類", data = "action=upload_book&type=categories")),
+                    QuickReplyButton(action = PostbackAction(label = "標籤", data = "action=upload_book&type=tags")),
+                    QuickReplyButton(action = PostbackAction(label = "確認上傳", data = "action=upload_book&type=upload")),
+                    cancel_quick_reply_button
+                ]
+            )
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Upload book"], quick_reply = quick_reply))
+
+        elif type == "photo":
+            uploading_state[userID] = type
+            cursor = database.cursor()
+            cursor.execute(f"SELECT photo FROM editting_books WHERE userID = '{userID}';")
+            route = cursor.fetchall()
+            cursor.close()
+            if route[0][0] == None:
+                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["No photo"], quick_reply = QuickReply(items = [cancel_quick_reply_button])))
+            else:
+                return line_bot_api.reply_message(
+                    event.reply_token,
+                    [
+                        ImageSendMessage(original_content_url = config["url"] + "/images?file_name=" + route[0][0], preview_image_url = config["url"] + "/images?file_name=" + route[0][0]),
+                        TextSendMessage(text = text_dict["Upload photo"], quick_reply = QuickReply(items = [cancel_quick_reply_button]))
+                    ]
+                )
+        
+        elif type == "categories":
+            cursor = database.cursor()
+            cursor.execute("SELECT category FROM categories;")
+            categories = list(map(lambda x: x[0], cursor.fetchall()))
+            cursor.close()
+            quick_reply_buttons = []
+            for category in categories:
+                quick_reply_buttons.append(QuickReplyButton(action = PostbackAction(label = category, data = "action=upload_book&type=choose_categories&categories=" + category)))
+            quick_reply_buttons.append(cancel_quick_reply_button)
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Choose categories"], quick_reply = QuickReply(items = quick_reply_buttons)))
+
+        elif type == "choose_categories":
+            category = data[2].split("=")[1]
+            cursor = database.cursor()
+            cursor.execute(f"INSERT INTO editting_books (userID, category) VALUES ('{userID}', '{category}') ON DUPLICATE KEY UPDATE category = '{category}';")
+            database.commit()
+            cursor.close()
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Update successfully"].format(message = category)))
+
+        elif type == "tags":
+            cursor = database.cursor()
+            cursor.execute("SELECT tag FROM tags ORDER BY sort ASC;")
+            tags = list(map(lambda x: x[0], cursor.fetchall()))
+            cursor.close()
+            quick_reply_buttons = []
+            for tag in tags:
+                quick_reply_buttons.append(QuickReplyButton(action = PostbackAction(label = tag, data = "action=upload_book&type=choose_tags&tags=" + tag)))
+            quick_reply_buttons.append(cancel_quick_reply_button)
+
+            cursor = database.cursor()
+            cursor.execute(f"SELECT tag FROM editting_tags WHERE userID = '{userID}';")
+            chosen_tags = ""
+            for chosen_tag in map(lambda x: x[0], cursor.fetchall()):
+                chosen_tags = chosen_tags + chosen_tag + " "
+            if len(chosen_tags) == 0:
+                chosen_tags = "空"
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Choose tags"].format(tags = chosen_tags), quick_reply = QuickReply(items = quick_reply_buttons)))
+
+        elif type == "choose_tags":
+            tag = data[2].split("=")[1]
+            cursor = database.cursor()
+            cursor.execute(f"SELECT * FROM editting_tags WHERE userID = '{userID}' AND tag = '{tag}';")
+            exist = len(cursor.fetchall()) == 1;
+            cursor.close()
+
+            cursor = database.cursor()
+            if not exist:
+                cursor.execute(f"INSERT INTO editting_tags (userID, tag) VALUES ('{userID}', '{tag}');")
+                database.commit()
+                cursor.close()
+                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Update successfully"].format(message = tag)))
+            else:
+                cursor.execute(f"DELETE FROM editting_tags WHERE userID = '{userID}' AND tag = '{tag}';")
+                database.commit()
+                cursor.close()
+                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Delete successfully"].format(message = tag)))
+        
+        elif type == "upload":
+            cursor = database.cursor()
+            cursor.execute(f"SELECT * FROM editting_books WHERE userID = '{userID}' AND name IS NOT NULL AND summary IS NOT NULL AND photo IS NOT NULL AND exchange_method IS NOT NULL AND category IS NOT NULL;")
+            empty_column = len(cursor.fetchall()) == 0
+            cursor.close()
+            if empty_column:
+                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Empty column"]))
+            else:
+                cursor = database.cursor()
+                cursor.execute(f"INSERT INTO books (userID, name, summary, photo, exchange_method, category) SELECT userID, name, summary, photo, exchange_method, category FROM editting_books WHERE userID = '{event.source.user_id}';")
+                cursor.execute(f"DELETE FROM editting_books WHERE userID = '{userID}';")
+                database.commit()
+                cursor.execute(f"SELECT upload_time FROM books WHERE userID = '{userID}' AND exchanged = 'F';")
+                upload_time = cursor.fetchall()[0][0]
+                cursor.execute(f"SELECT tag FROM editting_tags WHERE userID = '{userID}';")
+                tags = list(map(lambda x: x[0], cursor.fetchall()))
+                cursor.execute(f"DELETE FROM editting_tags WHERE userID = '{userID}';")
+                for tag in tags:
+                    cursor.execute(f"INSERT INTO book_tags (userID, tag, upload_time) VALUES ('{userID}', '{tag}', '{upload_time}');")
+                database.commit()
+                cursor.close()
+                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Upload successfully"]))
+        
+        else:
+            uploading_state[userID] = type
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Edit book"], quick_reply = QuickReply(items = [cancel_quick_reply_button])))
+
     elif action == "cancel":
-        if type == "profile":
-            editting_user.pop(event.source.user_id)
-            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Cancel action"]))
+        editting_user.pop(userID)
+        uploading_state.pop(userID)
+        return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Cancel action"]))
 
 @handler.add(MessageEvent, message = TextMessage)
 def handle_message(event : MessageEvent):
@@ -169,15 +314,23 @@ def handle_message(event : MessageEvent):
             editting_user.pop(userID)
             cursor.close()
             return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Input wrong gender"]))
+        
         elif (editting_user.get(userID) == "email"):
+            cursor.execute(f"SELECT * FROM friends WHERE email = '{event.message.text}';")
+            if len(cursor.fetchall()) > 0:
+                editting_user.pop(userID)
+                cursor.close()
+                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Repeat email"]))
             verifying_code = send_verify_email(event.message.text)
             if verifying_code == "0":
                 editting_user.pop(userID)
+                cursor.close()
                 return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Improper email"]))
             editting_user[userID] = "verify email"
             verifying_codes[userID] = [verifying_code, event.message.text]
             cursor.close()
-            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Input verifying code"].format(email = event.message.text)))
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Input verifying code"].format(email = event.message.text), quick_reply = QuickReply([cancel_quick_reply_button])))
+        
         elif (editting_user.get(userID) == "verify email"):
             if verifying_codes.get(userID)[0] == event.message.text:
                 cursor.execute(f"UPDATE friends SET email = '{verifying_codes.get(userID)[1]}' WHERE userID = '{userID}';")
@@ -186,12 +339,22 @@ def handle_message(event : MessageEvent):
                 return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Verified"]))
             else:
                 cursor.close()
-                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Wrong verifying code"]))
+                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Wrong verifying code"], quick_reply = QuickReply([cancel_quick_reply_button])))
+        
         else:
             cursor.execute(f"UPDATE friends SET {editting_user.pop(userID)} = '{event.message.text}' WHERE userID = '{userID}';")
             database.commit()
             cursor.close()
             return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Update successfully"].format(message = event.message.text)))
+    
+    elif uploading_state.get(userID) != None:
+        type = uploading_state.pop(userID)
+        cursor.execute(f"INSERT INTO editting_books (userID, {type}) VALUES ('{event.source.user_id}', '{event.message.text}') ON DUPLICATE KEY UPDATE {type} = '{event.message.text}';")
+        database.commit()
+        cursor.close()
+        return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Upload successfully"]))
+
+
 
 def send_verify_email(recipient: str):
     '''Send a email with verifying code to new updated emails and return the verifying code. If it is not a ntumail, return 0'''
@@ -216,27 +379,32 @@ def send_verify_email(recipient: str):
 
     return verifying_code
 
-'''
 @handler.add(MessageEvent, message = ImageMessage)
 def handle_image(event: MessageEvent):
+    
+    if uploading_state.pop(event.source.user_id) == "photo":
 
-    cursor = database.cursor()
-    userID = str(event.source.user_id)
-    if uploading_state.get(userID) == 2:
         photo = line_bot_api.get_message_content(event.message.id)
-        file_name = datetime.timestamp(datetime.now())
-        with open(f"./static/{file_name}.jpeg", 'wb') as f:
+        file_name = str(datetime.timestamp(datetime.now())) + ".jpeg"
+        with open(f"./static/book/{file_name}", 'wb') as f:
             for chunk in photo.iter_content():
                 f.write(chunk)
-        cursor.execute(f"UPDATE books SET photo_route = '{file_name}.jpeg' WHERE userID = '{userID}' and exchanged = 'F'")
+        cursor = database.cursor()
+        cursor.execute(f"SELECT photo FROM editting_books WHERE userID = '{event.source.user_id}';")
+        deleted_file = cursor.fetchall()[0][0]
+        if deleted_file != None:
+            os.remove("./static/book/" + deleted_file)
+        cursor.close()
+        cursor = database.cursor()
+        cursor.execute(f"INSERT INTO editting_books (userID, photo) VALUES ('{event.source.user_id}', '{file_name}') ON DUPLICATE KEY UPDATE photo = '{file_name}';")
         database.commit()
         cursor.close()
-        uploading_state.pop(userID)
-        return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = "書籍上架完畢"))
+        return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Upload successfully"]))
 
-    else:
-        return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = "若要上架書籍請使用下方按鈕"))
-'''
+def clean_state(userID : str):
+    uploading_state.pop(userID)
+    editting_user.pop(userID)
+    return
 
 if __name__ == "__main__":
     app.run()
