@@ -29,8 +29,6 @@ database = pymysql.connect(
     database = config["DATABASE"]
 )
 
-uploading_state = ExpiringDict(max_len=300, max_age_seconds=300)
-
 text_dict = {
     "Welcome": "歡迎使用本服務～\n若想參加活動，請使用下方功能按鈕更新資料並驗證",
     "How to edit profile": "透過底下按鈕選擇要修改哪項個人資訊，再輸入希望更改的訊息喔\n請在3分鐘內輸入完畢",
@@ -55,12 +53,21 @@ text_dict = {
     "Delete successfully": "已成功刪除 {message}",
     "Edit book": "請在底下輸入資訊",
     "Empty column": "書籍資料尚未填妥",
-    "Already have book": "尚有上架書籍未交換成功。若想上架新書請先下架舊書。"
+    "Already have book": "尚有上架書籍未交換成功。若想上架新書請先下架舊書",
+    "Find books": "選擇以下分類或標籤後搜尋",
+    "Chosen": "已選擇{choice}",
+    "Choose tag with existing tags": "已選擇 {tags}\n愈刪除請選擇已經有的標籤\n愈添加請選擇沒有加入的標籤\n請選擇以下標籤",
+    "Choose tag without existing tags": "請選擇以下標籤",
+    "Empty search fields": "請至少選擇一項搜尋條件",
+    "Search result": "共搜尋到{num}筆結果",
+    "More": "更多資訊"
 }
 
 editting_user = ExpiringDict(100, 180)
-uploading_user = ExpiringDict(100, 180)
+uploading_state = ExpiringDict(max_len=300, max_age_seconds=300)
 verifying_codes = ExpiringDict(100, 180)
+find_books_query = ExpiringDict(100, 180)
+result_books = {}
 
 cancel_quick_reply_button = QuickReplyButton(action = PostbackAction(label = "取消", data = "action=cancel&type=none"))
 
@@ -175,12 +182,13 @@ def handle_change(event: PostbackEvent):
     elif action == "upload_book":
 
         clean_state(userID)
+        '''
         cursor = database.cursor()
         cursor.execute(f"SELECT * FROM books WHERE userID = '{userID}' AND exchanged = 'F';")
         if len(cursor.fetchall()) != 0:
             return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Already have book"]))
         cursor.close()
-
+'''
         if type == "begin":
             quick_reply = QuickReply(
                 items = [
@@ -297,9 +305,179 @@ def handle_change(event: PostbackEvent):
             uploading_state[userID] = type
             return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Edit book"], quick_reply = QuickReply(items = [cancel_quick_reply_button])))
 
+    elif action == "find_book":
+        
+        clean_state(userID)
+
+        if type == "begin":
+            quick_reply_buttons = [
+                QuickReplyButton(action = PostbackAction(label = "分類", data = "action=find_book&type=categories")),
+                QuickReplyButton(action = PostbackAction(label = "標籤", data = "action=find_book&type=tags")),
+                QuickReplyButton(action = PostbackAction(label = "搜尋", data = "action=find_book&type=find")),
+                cancel_quick_reply_button
+            ]
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Find books"], quick_reply = QuickReply(items = quick_reply_buttons)))
+        
+        elif type == "categories":
+            cursor = database.cursor()
+            cursor.execute("SELECT category FROM categories;")
+            categories = list(map(lambda x: x[0], cursor.fetchall()))
+            cursor.close()
+            quick_reply_buttons = []
+            for category in categories:
+                quick_reply_buttons.append(QuickReplyButton(action = PostbackAction(label = category, data = "action=find_book&type=choose_categories&categories=" + category)))
+            quick_reply_buttons.append(cancel_quick_reply_button)
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Choose categories"], quick_reply = QuickReply(items = quick_reply_buttons)))
+
+        elif type == "choose_categories":
+            category = data[2].split("=")[1]
+            if find_books_query.get(userID) == None:
+                find_books_query[userID] = {"category":category}
+            else:
+                find_books_query[userID]["category"] = category
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Chosen"].format(choice = category)))
+
+        elif type == "tags":
+            cursor = database.cursor()
+            cursor.execute("SELECT tag, sort FROM tags ORDER BY sort ASC;")
+            tags = list(map(lambda x: [x[0],x[1]], cursor.fetchall()))
+            cursor.close()
+            quick_reply_buttons = []
+            for tag in tags:
+                quick_reply_buttons.append(QuickReplyButton(action = PostbackAction(label = tag[0], data = "action=find_book&type=choose_tags&tags=" + str(tag[1]))))
+            quick_reply_buttons.append(cancel_quick_reply_button)
+
+            if find_books_query.get(userID) != None:
+                chosen = find_books_query.get(userID).get("tags")
+                if chosen != None:
+                    chosen_tags = []
+                    for i in range(1, 13):
+                        if chosen[i]:
+                            chosen_tags.append(tags[i - 1][0])
+                    return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Choose tag with existing tags"].format(tags = " ".join(chosen_tags)), quick_reply = QuickReply(quick_reply_buttons)))
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Choose tag without existing tags"], quick_reply = QuickReply(items = quick_reply_buttons)))
+
+        elif type == "choose_tags":
+            tag = int(data[2].split("=")[1])
+            if find_books_query.get(userID) == None:
+                find_books_query[userID] = {"tags":[False] * 13}
+            else:
+                if find_books_query.get(userID).get("tags") == None:
+                    find_books_query.get(userID)["tags"] = [False] * 13
+            
+            find_books_query.get(userID).get("tags")[tag] = not find_books_query.get(userID).get("tags")[tag]
+            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Chosen"].format(choice = "")))
+
+        elif type == "find":
+            if find_books_query.get(userID) == None:
+                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Empty search fields"]))
+            category = find_books_query.get(userID).get("category")
+            choice = find_books_query.get(userID).get("tags")
+            query_string = "\
+                SELECT DISTINCT a.name, a.photo, a.upload_time, a.userID \
+                FROM books a JOIN friends c ON a.userID = c.userID JOIN book_tags ON a.userID = book_tags.userID AND a.upload_time = book_tags.upload_time\
+                WHERE a.exchanged = 'F' AND a.blocked = 'F' AND a.userID != '{self}' AND c.gender = '{gender}' AND c.expect_gender = '{expect_gender}' {category} {tags}\
+                ORDER BY \
+                (SELECT count(*) \
+                FROM book_tags \
+                WHERE book_tags.userID = a.userID AND book_tags.upload_time = a.upload_time {tags}) \
+                DESC;"
+            if category == None:
+                category = ""
+            else:
+                category = "AND category = '" + category + "'"
+
+            if choice == None:
+                chosen_tags = ""
+            else:
+                chosen_tags = []
+                cursor = database.cursor()
+                cursor.execute("SELECT tag FROM tags ORDER BY sort ASC;")
+                tags = cursor.fetchall()
+                cursor.close()
+                for i in range(1, 13):
+                    if choice[i]:
+                        chosen_tags.append("book_tags.tag = '" + tags[i - 1][0] + "'")
+                chosen_tags = "AND (" + " OR ".join(chosen_tags) + ")"
+            
+            cursor = database.cursor()
+            cursor.execute(f"SELECT gender, expect_gender FROM friends WHERE userID = '{userID}';")
+            expect_gender, gender = cursor.fetchall()[0]
+            cursor.close()
+
+            cursor = database.cursor()
+            query_string = query_string.format(category = category, tags = chosen_tags, self = userID, gender = gender, expect_gender = expect_gender)
+            print(query_string)
+            cursor.execute(query_string)
+            books = list(cursor.fetchall())
+            result_length = len(books)
+            result_books[userID] = books
+            cursor.close()
+
+            books_carouel = []
+            for i in range(min(10, len(books))):
+                book = books.pop(0)
+                cursor = database.cursor()
+                cursor.execute(f"SELECT tag FROM book_tags WHERE userID = '{book[3]}' AND upload_time = '{book[2]}';")
+                tags = list(map(lambda x: x[0], cursor.fetchall()))
+                cursor.close()
+                tags_string = " ".join(tags)
+                books_carouel.append(
+                    CarouselColumn(
+                        thumbnail_image_url = config["url"] + "/images?file_name=" + book[1],
+                        title = book[0],
+                        text = "標籤: " + tags_string,
+                        actions = [PostbackTemplateAction(label = text_dict["More"], data = f"action=show_book_detail&type={book[3]}+{book[2]}")]
+                    )
+                )
+            
+            if len(books) == 0:
+                return line_bot_api.reply_message(event.reply_token, [
+                    TextSendMessage(text = text_dict["Search result"].format(num = result_length)),
+                    TemplateSendMessage(alt_text = text_dict["See on the phone"], template = CarouselTemplate(columns = books_carouel))
+                ])
+            else:
+                return line_bot_api.reply_message(event.reply_token, [
+                    TextSendMessage(text = text_dict["Search result"].format(num = result_length)),
+                    TemplateSendMessage(alt_text = text_dict["See on the phone"], template = CarouselTemplate(columns = books_carouel),
+                    quick_reply = QuickReply(items = [QuickReplyButton(action = PostbackAction(label = "下一頁", data = "action=find_book&type=next_page"))]))
+                ])
+
+        elif type == "next_page":
+            books = result_books.get(userID)
+            books_carouel = []
+            for i in range(min(10, len(books))):
+                book = books.pop(0)
+                cursor = database.cursor()
+                cursor.execute(f"SELECT tag FROM book_tags WHERE userID = '{book[3]}' AND upload_time = '{book[2]}';")
+                tags = list(map(lambda x: x[0], cursor.fetchall()))
+                cursor.close()
+                tags_string = " ".join(tags)
+                books_carouel.append(
+                    CarouselColumn(
+                        thumbnail_image_url = config["url"] + "/images?file_name=" + book[1],
+                        title = book[0],
+                        text = "標籤: " + tags_string,
+                        actions = [PostbackTemplateAction(label = text_dict["More"], data = f"action=show_book_detail&type={book[3]}+{book[2]}")]
+                    )
+                )
+            
+            if len(books) == 0:
+                result_books.pop(userID)
+                return line_bot_api.reply_message(event.reply_token, [
+                    TemplateSendMessage(alt_text = text_dict["See on the phone"], template = CarouselTemplate(columns = books_carouel))
+                ])
+            else:
+                return line_bot_api.reply_message(event.reply_token, [
+                    TemplateSendMessage(alt_text = text_dict["See on the phone"], template = CarouselTemplate(columns = books_carouel),
+                    quick_reply = QuickReply(items = [QuickReplyButton(action = PostbackAction(label = "下一頁", data = "action=find_book&type=next_page"))]))
+                ])
+
+    elif action == "show_book_detail":
+        print(type)
+
     elif action == "cancel":
-        editting_user.pop(userID)
-        uploading_state.pop(userID)
+        clean_state(userID)
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Cancel action"]))
 
 @handler.add(MessageEvent, message = TextMessage)
@@ -353,8 +531,6 @@ def handle_message(event : MessageEvent):
         database.commit()
         cursor.close()
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Upload successfully"]))
-
-
 
 def send_verify_email(recipient: str):
     '''Send a email with verifying code to new updated emails and return the verifying code. If it is not a ntumail, return 0'''
