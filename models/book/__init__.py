@@ -1,0 +1,3 @@
+from . import insert_or_update_editting_book
+
+insert_or_update_editting_book = insert_or_update_editting_book.insert_or_update_editting_book

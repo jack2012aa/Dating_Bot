@@ -1,0 +1,7 @@
+from . import insert_user, update_user_profile, get_user_profiles, is_profile_finished, is_email_duplicated
+
+insert_user = insert_user.insert_user
+update_user_profile = update_user_profile.update_user_profile
+get_user_profiles = get_user_profiles.get_user_profiles
+is_profile_finished = is_profile_finished.is_profile_finished
+is_email_duplicated = is_email_duplicated.is_email_duplicated
