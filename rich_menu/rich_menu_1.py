@@ -23,8 +23,3 @@ with open("./static/rich_menu/book_test_1.jpeg", "rb") as f:
     line_bot_api.set_rich_menu_image(rich_menu_id, "image/jpeg",f)
 '''
 line_bot_api.set_default_rich_menu(rich_menu_id = "richmenu-aa9beac293449ffcdd317f1bae00417f")
-
-'''
-curl -v -X POST https://api.line.me/v2/bot/user/all/richmenu/richmenu-aa9beac293449ffcdd317f1bae00417f \
--H "Authorization: Bearer 7G+T2NU2knYith8wA+6Dy4SrJEzVm8f3yvboYoI08TDa4eBUYB4TZHta2FcHggnHErvZLJjepdAtFNO5AYSQW4/tVl2TNuJRzkz9R+h8NQ2sqgwXRmbeMuiy1isldp+yCW39lOLXzsghzb/+qpotJgdB04t89/1O/w1cDnyilFU="
-'''
