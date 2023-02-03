@@ -1,5 +1,5 @@
 import models
-from services import line_bot_api, text_dict, edit, config, cancel_quick_reply_button
+from services import line_bot_api, text_dict, cache, config, cancel_quick_reply_button
 from linebot.models import MessageEvent, TextSendMessage, QuickReply
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -17,15 +17,15 @@ def send_verifying_email(event: MessageEvent):
     duplicated = models.user.is_email_duplicated(address)
     if duplicated:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Repeat email"]))
-        edit.pop(event.source.user_id)
+        cache.pop(event.source.user_id)
         return 0
     elif address.split("@")[1] != "ntu.edu.tw" or len(address.split("@")[0]) != 9:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Improper email"]))  
-        edit.pop(event.source.user_id)
+        cache.pop(event.source.user_id)
         return 0
     else:
         code = send_email(address)
-        edit[event.source.user_id] = ["edit_profile", "verify_email", code, address]
+        cache[event.source.user_id] = ["edit_profile", "verify_email", code, address]
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Input verifying code"].format(email = address), quick_reply = QuickReply([cancel_quick_reply_button])))
 
 def send_email(recipient: str):

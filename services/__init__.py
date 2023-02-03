@@ -26,29 +26,38 @@ text_dict = {
     "Not year": "請輸入數字作為年份",
     "Year out of range": "請輸入合理的年份",
 
+    #Relate with uploading book
+    "Profile not finished": "請先將個人資訊填寫完畢再參加活動",
+    "Already have book": "尚有上架書籍未交換成功。若想上架新書請先下架舊書",
+    "Upload book": "透過底下按鈕選擇填入書籍資料",
+    "Null information": "尚未上傳{field}",
+    "Edit information": "請在底下輸入/上傳新的書籍{field}",
+    "Upload photo successfully": "已成功上傳照片",
+    "Present information": "目前的{field}為{information}",
+    "Choose information": "請選擇以下{field}",
+    "Upload successfully": "已成功更改為 {value}",
+    "Delete tag": "已成功刪除{tag}",
+    "Insert tag": "已成功添加{tag}",
+    "Empty column": "書籍資料尚未填妥",
+    "Upload book successfully": "已成功上架書籍",
+    "Find books": "選擇以下分類或標籤後搜尋",
+    "Empty search fields": "尚未選擇搜尋條件",
+    "Choose search fields": "請選擇以下分類/標籤",
+    "Present search fields": "目前以選擇搜尋條件：\n{values}",
+    "Chosen": "已選擇",
+
     "See on the phone": "請於手機端觀看",
     "Cancel action": "已取消動作",
     "Verified": "已通過驗證",
-    "Upload book": "透過底下按鈕選擇填入書籍資料\n請在3分鐘內輸入完畢",
-    "No photo": "目前沒有上傳照片\n請在底下上傳照片",
     "Upload photo": "以上為目前上傳的照片\n請在底下上傳照片",
-    "Upload successfully": "上傳成功",
     "Choose categories": "請選擇以下分類",
-    "Choose tags": "目前標籤為：{tags}\n愈刪除請選擇已經有的標籤\n愈添加請選擇沒有加入的標籤\n請選擇以下標籤",
     "Delete successfully": "已成功刪除 {message}",
     "Edit book": "請在底下輸入資訊",
-    "Empty column": "書籍資料尚未填妥",
-    "Already have book": "尚有上架書籍未交換成功。若想上架新書請先下架舊書",
-    "Find books": "選擇以下分類或標籤後搜尋",
-    "Chosen": "已選擇{choice}",
-    "Choose tag with existing tags": "已選擇 {tags}\n愈刪除請選擇已經有的標籤\n愈添加請選擇沒有加入的標籤\n請選擇以下標籤",
-    "Choose tag without existing tags": "請選擇以下標籤",
-    "Empty search fields": "請至少選擇一項搜尋條件",
     "Search result": "共搜尋到{num}筆結果",
     "More": "更多資訊"
 }
 
-cancel_quick_reply_button = QuickReplyButton(action = PostbackAction(label = "取消", data = "action=cancel&type=none"))
-edit = {}
+cancel_quick_reply_button = QuickReplyButton(action = PostbackAction(label = "取消", display_text = "取消動作",data = "action=cancel&type=none"))
+cache = {}
 
 from . import user, book

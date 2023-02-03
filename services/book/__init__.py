@@ -1,0 +1,16 @@
+from . import begin_edit_book, begin_edit_photo, upload_photo, begin_edit_tag_or_category, insert_or_update_book, insert_or_delete_tag, begin_edit, upload_editting_book, begin_upload, begin_find_book, begin_choose_tags_or_categories, add_chosen_tags_or_categories, find_books, next_page
+
+begin_edit_book = begin_edit_book.begin_edit_book
+begin_edit_photo = begin_edit_photo.begin_edit_photo
+upload_photo = upload_photo.upload_photo
+begin_edit_tag_or_category = begin_edit_tag_or_category.begin_edit_tag_or_category
+insert_or_update_book = insert_or_update_book.insert_or_update_book
+insert_or_delete_tag = insert_or_delete_tag.insert_or_delete_tag
+begin_edit = begin_edit.begin_edit
+upload_editting_book = upload_editting_book.upload_editting_book
+begin_upload = begin_upload.begin_upload
+begin_find_book = begin_find_book.begin_find_book
+begin_choose_tags_or_categories = begin_choose_tags_or_categories.begin_choose_tags_or_categories
+add_chosen_tags_or_categories = add_chosen_tags_or_categories.add_chosen_tags_or_categories
+find_books = find_books.find_books
+next_page = next_page.next_page

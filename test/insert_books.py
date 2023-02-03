@@ -13,11 +13,10 @@ database = pymysql.connect(
 )
 
 cursor = database.cursor()
-cursor.execute("SELECT userID FROM friends ORDER BY userID ASC LIMIT 40;")
+cursor.execute("SELECT userID FROM friends WHERE userID != 'Ucf19b2f7d0713f49b2b61183c545a38c';")
 userIDs = list(map(lambda x: x[0],cursor.fetchall()))
 cursor.close()
 
-'''
 categories = ["傳記","小說","工具書","教科書","散文","漫畫","童書","詩詞戲曲","週刊雜誌"]
 cursor = database.cursor()
 for user in userIDs:
@@ -25,10 +24,9 @@ for user in userIDs:
         ('{user}', '{str(random.randint(1000,9999))}', '{str(random.randint(1000,9999))}', '1675159214.479361.jpeg', '面交', '{categories[random.randint(0,8)]}');")
 database.commit()
 cursor.close()
-'''
 
 cursor = database.cursor()
-cursor.execute("SELECT userID, upload_time FROM books ORDER BY userID ASC LIMIT 41;")
+cursor.execute("SELECT userID, upload_time FROM books WHERE userID != 'Ucf19b2f7d0713f49b2b61183c545a38c';")
 books = list(map(lambda x: [x[0],x[1]],cursor.fetchall()))
 cursor.close()
 

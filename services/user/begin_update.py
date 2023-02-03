@@ -1,11 +1,11 @@
 import models
-from services import edit, line_bot_api, text_dict, cancel_quick_reply_button
+from services import cache, line_bot_api, text_dict, cancel_quick_reply_button
 from linebot.models import Event, TextSendMessage, QuickReply
 
 def begin_update(event: Event, type: str):
     '''Show present value and put user into changing profile state'''
 
-    edit[event.source.user_id] = ["edit_profile", type]
+    cache[event.source.user_id] = ["edit_profile", type]
     profile_dict = {
         "lineID": "line id",
     }

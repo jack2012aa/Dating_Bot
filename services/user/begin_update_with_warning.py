@@ -1,12 +1,12 @@
 import models
-from services import cancel_quick_reply_button, line_bot_api, text_dict, edit
+from services import cancel_quick_reply_button, line_bot_api, text_dict, cache
 from linebot.models import Event, QuickReply, TextSendMessage
 
 
 def begin_update_with_warning(event: Event, type, warning_message: str):
     '''Show warning of input birth year.'''
     
-    edit[event.source.user_id] = ["edit_profile", type]
+    cache[event.source.user_id] = ["edit_profile", type]
     profile_dict = {"email":"學校信箱","birth_year":"出生年份"}
     value = models.user.get_user_profiles(event.source.user_id, [type])[0]
     if value != None:

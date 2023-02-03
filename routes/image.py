@@ -8,5 +8,4 @@ image_bp = Blueprint("image_bp", __name__)
 def get_image():
 
     file_name = request.args.get("file_name")
-    print(file_name)
     return send_file(f"static/book/{file_name}", mimetype = "image/jpeg")
