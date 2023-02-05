@@ -1,7 +1,7 @@
 import models
 
 def get_information_string(userID: str, editting: bool):
-    '''Get all user book's information and photo name'''
+    '''Get user's newest book's information and photo direction'''
 
     if editting and models.book.has_editting_book(userID):
         id, name, summary, photo, exchange_method, category = map(lambda x: "尚未填寫" if x == None else x, models.book.get_editting_book_information(userID, all = True))
