@@ -9,6 +9,7 @@ def begin_update_gender(event: Event, type: str):
                 items = [
                     QuickReplyButton(action = PostbackAction(label = "男", display_text = "男" ,data = f"action=edit_profile&type=choose_gender&field={type}&value=男")),
                     QuickReplyButton(action = PostbackAction(label = "女", display_text = "女",data = f"action=edit_profile&type=choose_gender&field={type}&value=女")),
+                    QuickReplyButton(action = PostbackAction(label = "非二元", display_text = "非二元",data = f"action=edit_profile&type=choose_gender&field={type}&value=非二元")),
                     cancel_quick_reply_button
                 ]
             )

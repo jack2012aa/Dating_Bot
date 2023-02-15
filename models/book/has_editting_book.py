@@ -1,8 +1,13 @@
 from models import database
+from flask import current_app
+from datetime import datetime
 
 def has_editting_book(userID: str):
 
-    with database.cursor() as cursor:
-        cursor.execute(f"SELECT * FROM editting_books WHERE userID = '{userID}';")
-        result = len(cursor.fetchall()) == 1
+    cursor = database.cursor()
+    sql = f"SELECT count(*) FROM editting_books WHERE userID = '{userID}';"
+    cursor.execute(sql)
+    result = cursor.fetchone()[0] == 1
+    cursor.close()
+    current_app.logger.debug(f"[{datetime.now()}] Call: has_editting_book({userID}), sql = {sql}, result = {result}")
     return result

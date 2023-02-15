@@ -1,4 +1,4 @@
-from . import begin_edit_book, begin_edit_photo, upload_photo, begin_edit_tag_or_category, insert_or_update_book, insert_or_delete_tag, begin_edit, upload_editting_book, begin_upload, begin_find_book, begin_choose_tags_or_categories, add_chosen_tags_or_categories, find_books, next_page
+from . import begin_edit_book, begin_edit_photo, next_search, upload_photo, begin_edit_tag_or_category, insert_or_update_book, insert_or_delete_tag, begin_edit, upload_editting_book, begin_upload, begin_find_book, begin_choose_tags_or_categories, add_chosen_tags_or_categories, find_books, show_book_detail, show_invitations, get_book_carousels, get_my_invitation, accept_invitation, get_my_book, get_random_book
 
 begin_edit_book = begin_edit_book.begin_edit_book
 begin_edit_photo = begin_edit_photo.begin_edit_photo
@@ -13,4 +13,11 @@ begin_find_book = begin_find_book.begin_find_book
 begin_choose_tags_or_categories = begin_choose_tags_or_categories.begin_choose_tags_or_categories
 add_chosen_tags_or_categories = add_chosen_tags_or_categories.add_chosen_tags_or_categories
 find_books = find_books.find_books
-next_page = next_page.next_page
+next_search = next_search.next_search
+show_book_detail = show_book_detail.show_book_detail
+show_invitations = show_invitations.show_invitations
+get_book_carousels = get_book_carousels.get_book_carousels
+get_my_invitation = get_my_invitation.get_my_invitation
+accept_invitation = accept_invitation.accept_invitation
+get_my_book = get_my_book.get_my_book
+get_random_book = get_random_book.get_random_book

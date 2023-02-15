@@ -1,4 +1,5 @@
 import models
+import boto3
 from services import line_bot_api, text_dict, cancel_quick_reply_button, config, cache
 from linebot.models import PostbackEvent, TextSendMessage, QuickReply, ImageSendMessage
 
@@ -14,9 +15,11 @@ def begin_edit_photo(event: PostbackEvent):
             ]
         )
     else:
+        s3 = boto3.client("s3", aws_access_key_id = config["aws_access_key_id"], aws_secret_access_key = config["aws_secret_access_key"])
+        url = s3.generate_presigned_url(ClientMethod = "get_object", ExpiresIn = 60, Params = {"Bucket": "linedatingapp", "Key": photo_dir})
         line_bot_api.reply_message(event.reply_token,
             [
-            ImageSendMessage(original_content_url = config["url"] + "/images?file_name=" + photo_dir, preview_image_url = config["url"] + "/images?file_name=" + photo_dir),
+            ImageSendMessage(original_content_url = url, preview_image_url = url),
             TextSendMessage(text = "以上為目前書籍照片" + text_dict["Edit information"].format(field = "照片"), quick_reply = QuickReply(items = [cancel_quick_reply_button]))
             ]
         )

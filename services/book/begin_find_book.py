@@ -4,8 +4,9 @@ from linebot.models import PostbackEvent, QuickReply, QuickReplyButton, Postback
 def begin_find_book(event: PostbackEvent):
     '''Show quick replys of fields to find books'''
 
-    state = cache.get(event.source.user_id, None)
-    if state == None or state[0] != "find_book" or state[1] != "fill_in":
+    #status: [action, type, categories, tags]
+    status = cache.get(event.source.user_id, None)
+    if status == None or status[0] != "find_book" or status[1] != "fill_in":
         value = None
     else:
         value = ""
@@ -22,6 +23,7 @@ def begin_find_book(event: PostbackEvent):
     quick_reply_buttons = [
         QuickReplyButton(action = PostbackAction(label = "分類", display_text = "選擇分類", data = "action=find_book&type=categories")),
         QuickReplyButton(action = PostbackAction(label = "標籤", display_text = "選擇標籤", data = "action=find_book&type=tags")),
+        ＱuickReplyButton(action = PostbackAction(label = "隨機", display_text = "隨機搜尋", data = "action=find_book&type=random_find")),
         QuickReplyButton(action = PostbackAction(label = "搜尋", display_text = "搜尋書籍", data = "action=find_book&type=find")),
         cancel_quick_reply_button
     ]

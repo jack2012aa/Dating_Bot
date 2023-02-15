@@ -1,4 +1,6 @@
 from models import database
+from flask import current_app
+from datetime import datetime
 
 def get_editting_book_information(userID: str, fields = [], all = False):
     '''
@@ -10,11 +12,13 @@ def get_editting_book_information(userID: str, fields = [], all = False):
     fields = ",".join(fields)
     cursor = database.cursor()
     if all:
-        cursor.execute(f"SELECT * FROM editting_books WHERE userID = '{userID}';")
+        sql = f"SELECT * FROM editting_books WHERE userID = '{userID}';"
     else:
-        cursor.execute(f"SELECT {fields} FROM editting_books WHERE userID = '{userID}';")
+        sql = f"SELECT {fields} FROM editting_books WHERE userID = '{userID}';"
+    cursor.execute(sql)
     result = cursor.fetchall()
     cursor.close()
+    current_app.logger.debug(f"[{datetime.now()}] Call: get_editting_book_information({userID}, {fields}, {all}), sql = {sql}, result = {result}")
     if len(result) == 0:
         return [None]
     return list(result[0])
