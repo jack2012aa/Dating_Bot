@@ -1,3 +1,5 @@
 setting.json
 static/*
 tmp.txt
+log.txt
+./venv
