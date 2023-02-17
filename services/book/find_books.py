@@ -19,6 +19,7 @@ def find_books(event: PostbackEvent):
     expect_gender = models.user.get_user_profiles(event.source.user_id, ["gender"])[0]
     books = models.book.get_books(event.source.user_id, gender, expect_gender, categories, tags)
     if books == None:
+        cache.pop(event.source.user_id, None)
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["No such books"]))
 
     for book in books:
