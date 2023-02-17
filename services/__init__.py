@@ -27,7 +27,7 @@ text_dict = {
     "Year out of range": "請輸入合理的年份",
     "Teaching": "歡迎使用我們的交友服務！\n我們團隊希望能提供不同於交友軟體的速食戀愛體驗，透過不定期舉辦的活動讓您找到滿意的另一半！\n\n請先使用下方的功能列的「修改資料」功能，透過下方出現的選擇按鈕修改個人資料。全部填妥後才能參加我們的活動喔\n在活動中找到感興趣的人送出配對邀請，如果對方接受的話即可獲得對方的line ID\n\n快點開始配對吧~\n\n*註：操作僅能於手機中完成。個人資訊僅用於活動中",
     "My profile": "line ID: {lineID}\n性別: {gender}\n希望配對性別: {expect_gender}\n出生年份{year}\n信箱{email}",
-    "Contact info": "Email: ",
+    "Contact info": "Email: letsmeettoday.service@gmail.com\nFacebook: https://www.facebook.com/profile.php?id=100003508569457&mibextid=LQQJ4d",
 
     #Relate with book
     "Activity info": "你手邊有書籍想要與人交換嗎？你喜歡藉由分享閱讀的感動與喜悅來結交更多朋友嗎？\n這是一個結合換書與交友的活動，透過這個活動不只可以將閒置的書籍與人互換，還能認識更多的書籍愛好者。\n心動不如馬上行動！",

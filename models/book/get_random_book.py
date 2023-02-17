@@ -13,13 +13,14 @@ def get_random_book(userID: str, gender: str, expect_gender: str):
     try:
         cursor = database.cursor()
         cursor.execute(sql)
-        result = list(cursor.fetchone())
+        result = cursor.fetchone()
+        if result == None:
+            return None
+        result = list(result)
         cursor.close()
         current_app.logger.debug(f"[{datetime.now()}] Call: get_random_book({userID}, {gender}, {expect_gender}), sql = {sql}, result = {result}")
-        if len(result) == 0:
-            return None
         return result
     except Exception as err:
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: get_random_book({userID}, {gender}, {expect_gender}), sql = {sql}, result = {result}, {type(err)}, {str(err.args)}")
+        current_app.logger.debug(f"[{datetime.now()}] Call: get_random_book({userID}, {gender}, {expect_gender}), sql = {sql}, {type(err)}, {str(err.args)}")
         return None

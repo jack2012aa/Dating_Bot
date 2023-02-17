@@ -1,11 +1,12 @@
 import models
 from . import get_book_carousels
-from services import line_bot_api, text_dict
+from services import line_bot_api, text_dict, cache
 from linebot.models import PostbackEvent, TextSendMessage, TemplateSendMessage
 
 def get_random_book(event: PostbackEvent):
     '''Reply a random book'''
 
+    cache.pop(event.source.user_id,None)
     gender, expect_gender = models.user.get_user_profiles(event.source.user_id, ["gender", "expect_gender"])
     book = models.book.get_random_book(event.source.user_id, expect_gender, gender)
     if book == None:

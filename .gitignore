@@ -2,4 +2,6 @@ setting.json
 static/*
 tmp.txt
 log.txt
-./venv
+.venv/
+rich_menu
+__pycache__/
