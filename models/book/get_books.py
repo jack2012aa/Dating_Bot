@@ -27,7 +27,7 @@ def get_books(userID: str, gender: str, expect_gender: str, categories: list = N
         cursor = database.cursor()
         cursor.execute(sql)
         books = cursor.fetchall()
-        if books == None:
+        if len(books) == 0:
             cursor.close()
             return None
         result = []
