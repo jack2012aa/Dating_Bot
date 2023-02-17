@@ -14,7 +14,7 @@ def accept_invitation(invitorID:str, invitor_upload_time: str, invitedID: str, i
         cursor.execute(f"INSERT INTO revert_books_list (userID, upload_time) SELECT userID, upload_time FROM books WHERE (userID = '{invitorID}' AND upload_time = '{invitor_upload_time}') OR (userID = '{invitedID}' AND upload_time = '{invited_upload_time}');")
 
         #Set checked_time & expired/blocked
-        cursor.execute(f"UPDATE invitations SET expired = 'T', checked_time = 'CURRENT_TIMESTAMP' WHERE (invitorID = '{invitorID}' OR invitedID = '{invitedID}' OR invitorID = '{invitedID}' OR invitedID = '{invitorID}') AND accept = 'F' AND deny = 'F' AND expired = 'F';")
+        cursor.execute(f"UPDATE invitations SET expired = 'T', checked_time = CURRENT_TIMESTAMP WHERE (invitorID = '{invitorID}' OR invitedID = '{invitedID}' OR invitorID = '{invitedID}' OR invitedID = '{invitorID}') AND accept = 'F' AND deny = 'F' AND expired = 'F';")
         cursor.execute(f"UPDATE books SET blocked = 'T' WHERE userID = '{invitorID}' AND upload_time = '{invitor_upload_time}';")
         cursor.execute(f"UPDATE books SET blocked = 'T' WHERE userID = '{invitedID}' AND upload_time = '{invited_upload_time}';")
         database.commit()
