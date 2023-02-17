@@ -13,7 +13,7 @@ def get_book_carousels(books: list, invite: bool):
     if invite:
         for i in range(min(10, len(books))):
             book = books.pop(0)
-            if book[5] != None:
+            if book[5][0] != None:
                 tags_string = " ".join(book[5])
             else:
                 tags_string = "無"
@@ -33,7 +33,7 @@ def get_book_carousels(books: list, invite: bool):
     else:
         for i in range(min(10, len(books))):
             book = books.pop(0)
-            if book[5] != None:
+            if book[5][0] != None:
                     tags_string = " ".join(book[5])
             else:
                 tags_string = "無"
