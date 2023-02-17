@@ -1,4 +1,4 @@
-import models
+import models, boto3
 from . import get_information_string, show_invitations
 from services import line_bot_api, text_dict, config
 from linebot.models import PostbackEvent, TextSendMessage, ImageSendMessage
@@ -10,8 +10,9 @@ def get_my_invitation(event: PostbackEvent, userID: str):
 
     if models.book.has_accept_invitation(event.source.user_id):
         userID, upload_time, lineID = models.book.get_exchanged_book_and_lineID(event.source.user_id)
-        info, photo = get_information_string.get_information_string(userID, False, upload_time)
-        url = config["url"] + "/images?file_name=" + photo
+        info, photo_dir = get_information_string.get_information_string(userID, False, upload_time)
+        s3 = boto3.client("s3", aws_access_key_id = config["aws_access_key_id"], aws_secret_access_key = config["aws_secret_access_key"])
+        url = s3.generate_presigned_url(ClientMethod = "get_object", ExpiresIn = 60, Params = {"Bucket": "linedatingapp", "Key": photo_dir})
         current_app.logger.info(f"[{datetime.now()}] Action: invite, Type: my_invitation, ID: {event.source.user_id}, accept: True")
         return line_bot_api.reply_message(event.reply_token, [
             ImageSendMessage(url, url),
