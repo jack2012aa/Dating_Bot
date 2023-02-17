@@ -30,9 +30,9 @@ text_dict = {
     "Contact info": "Email: letsmeettoday.service@gmail.com\nFacebook: https://www.facebook.com/profile.php?id=100003508569457&mibextid=LQQJ4d",
 
     #Relate with book
-    "Activity info": "你手邊有書籍想要與人交換嗎？你喜歡藉由分享閱讀的感動與喜悅來結交更多朋友嗎？\n這是一個結合換書與交友的活動，透過這個活動不只可以將閒置的書籍與人互換，還能認識更多的書籍愛好者。\n心動不如馬上行動！",
+    "Activity info": "你喜歡藉由分享閱讀的感動與喜悅來結交更多朋友嗎？\n這是一個結合讀書與交友的活動，透過這個活動不只可以將喜歡的書推廣出去，還能認識更多的書籍愛好者。\n心動不如馬上行動！",
     "Join method": "參加方式：\n1.上架自己的書籍資訊\n2.尋找自己中意的書\n3.送出交換邀請，或是接受邀請\n4.從配對邀請查看是否配對成功！",
-    "Activity warning": "注意事項：\n1.一次只能上架一本書\n2.活動每階段僅能交換1本書",
+    "Activity warning": "注意事項：\n1.一次只能上架一本書\n2.一本書一天只能交換一次",
     "Profile not finished": "請先將個人資訊填寫完畢再參加活動",
     "Already have book": "尚有上架書籍未交換成功。若想上架新書請先下架舊書",
     "Upload book": "透過底下按鈕選擇填入書籍資料",
