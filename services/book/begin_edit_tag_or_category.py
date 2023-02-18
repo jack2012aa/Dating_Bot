@@ -25,7 +25,7 @@ def begin_edit_tag_or_category(event: PostbackEvent, type: str):
     if value == None:
         line_bot_api.reply_message(event.reply_token, [
             TextSendMessage(text = text_dict["Null information"].format(field = field[type])),
-            TextSendMessage(text = text_dict["Edit information"].format(field = field[type]), quick_reply = QuickReply(items = quick_reply_buttons))
+            TextSendMessage(text = text_dict["Choose information"].format(field = field[type]), quick_reply = QuickReply(items = quick_reply_buttons))
             ]
         )
     else:
