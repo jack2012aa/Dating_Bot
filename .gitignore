@@ -5,3 +5,4 @@ log.txt
 .venv/
 rich_menu
 __pycache__/
+test_model.py

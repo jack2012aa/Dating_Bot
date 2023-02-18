@@ -11,9 +11,9 @@ def has_accept_invitation(userID: str):
         cursor.execute(sql)
         result = len(cursor.fetchall()) == 1
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: has_accept_invitation({userID}), sql = {sql}, result = {result}")
+        #current_app.logger.debug(f"[{datetime.now()}] Call: has_accept_invitation({userID}), sql = {sql}, result = {result}")
         return result
     except:
-        current_app.logger.error(f"[{datetime.now()}] SQL error. Call: has_accept_invitation({userID}), sql = {sql}")
+        #current_app.logger.error(f"[{datetime.now()}] SQL error. Call: has_accept_invitation({userID}), sql = {sql}")
         cursor.close()
         return False

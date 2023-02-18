@@ -46,7 +46,7 @@ text_dict = {
     "Insert tag": "已成功添加{tag}",
     "Empty column": "書籍資料尚未填妥",
     "Upload book successfully": "已成功上架書籍",
-    "Find books": "選擇以下分類或標籤後搜尋",
+    "Find books": "分類、標籤：選擇希望尋找的分類及標籤（可複選）\n搜尋：依照選擇的分類及標籤進行搜尋，符合越多條件的書會被排在越前面\n隨機：不考慮分類及標籤、隨機找一本書",
     "Empty search fields": "尚未選擇搜尋條件",
     "Choose search fields": "請選擇以下分類/標籤",
     "Present search fields": "目前以選擇搜尋條件：\n{values}",

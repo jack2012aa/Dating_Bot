@@ -23,8 +23,8 @@ def begin_find_book(event: PostbackEvent):
     quick_reply_buttons = [
         QuickReplyButton(action = PostbackAction(label = "分類", display_text = "選擇分類", data = "action=find_book&type=categories")),
         QuickReplyButton(action = PostbackAction(label = "標籤", display_text = "選擇標籤", data = "action=find_book&type=tags")),
-        ＱuickReplyButton(action = PostbackAction(label = "隨機", display_text = "隨機搜尋", data = "action=find_book&type=random_find")),
         QuickReplyButton(action = PostbackAction(label = "搜尋", display_text = "搜尋書籍", data = "action=find_book&type=find")),
+        ＱuickReplyButton(action = PostbackAction(label = "隨機", display_text = "隨機搜尋", data = "action=find_book&type=random_find")),
         cancel_quick_reply_button
     ]
     if value == None:
