@@ -12,7 +12,7 @@ app.logger.setLevel(logging.DEBUG)
 routes.init_app(app)
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(func = models.book.revert_books_and_invitations, trigger = "cron", hour = "0")
+scheduler.add_job(func = models.book.revert_books_and_invitations, trigger = "cron", hour = "0", minute = "0")
 scheduler.start()
 
 
