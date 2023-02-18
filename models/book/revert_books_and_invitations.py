@@ -1,6 +1,4 @@
 from models import database
-from flask import current_app
-from datetime import datetime
 
 def revert_books_and_invitations():
     '''Revert books and invitations expired last day'''
@@ -13,10 +11,8 @@ def revert_books_and_invitations():
         cursor.execute("DELETE FROM revert_invitations_list;")
         database.commit()
         cursor.close()
-        current_app.logger.info(f"[{datetime.now()}] Revert successfully")
         return True
     except Exception as err:
-        current_app.logger.info(f"[{datetime.now()}] Revert failure, {type(err)}, {str(err.args)}")
         print(err)
         cursor.close()
         return False
