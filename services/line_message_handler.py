@@ -131,7 +131,9 @@ def handle_postback(event: PostbackEvent):
         current_app.logger.info(f"[{datetime.now()}] Action: {action}, Type: {type}, ID: {event.source.user_id}")
         return line_bot_api.reply_message(event.reply_token, [
             TextSendMessage(text_dict["Activity info"]),
-            TextSendMessage(text_dict["Join method"]), 
+            TextSendMessage(text_dict["Upload method"]), 
+            TextSendMessage(text_dict["Find method"]), 
+            TextSendMessage(text_dict["Invite and delete method"]), 
             TextSendMessage(text_dict["Activity warning"])
         ])
 
@@ -288,6 +290,10 @@ def handle_text_message(event: MessageEvent):
                 cache.pop(event.source.user_id)
                 return user.update_user_profile(event, type, event.message.text)
         
+        elif type == "photo":
+            cache.pop(event.source.user_id, None)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Please upload a photo"]))
+
         else:
             return user.update_user_profile(event, type, event.message.text)
 
@@ -297,5 +303,5 @@ def handle_text_message(event: MessageEvent):
 @handler.add(MessageEvent, message = ImageMessage)
 def handle_image(event: MessageEvent):
     
-    if cache.get(event.source.user_id, None)[1] == "photo":
+    if cache.pop(event.source.user_id, None)[1] == "photo":
        return book.upload_photo(event)
