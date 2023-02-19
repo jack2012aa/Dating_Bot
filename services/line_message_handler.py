@@ -274,7 +274,9 @@ def handle_text_message(event: MessageEvent):
             else:
                 address = cache.get(event.source.user_id)[3]
                 cache.pop(event.source.user_id)
-                models.user.update_user_profile(event.source.user_id, "department", department_dict[str(address[3:7]).upper()])
+                department = department_dict.get(str(address[3:7]).upper(), None)
+                if department != None:
+                    models.user.update_user_profile(event.source.user_id, "department", department)
                 return user.update_user_profile(event, "email", address)
 
         elif type == "birth_year":
