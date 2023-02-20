@@ -6,6 +6,7 @@ def insert_user(userID: str):
     Insert user with user id = userID into table friends. Ignoring whether the user is already exist or not.
     '''
 
+    database.ping(True)
     cursor = database.cursor()
     sql = f"INSERT INTO friends (userID) VALUES ('{userID}');"
     try:

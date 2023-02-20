@@ -32,12 +32,15 @@ routes.init_app(app)
 
 #Define schedular to revert expired books
 revert_scheduler = BackgroundScheduler()
-revert_scheduler.add_job(func = models.book.revert_books_and_invitations, trigger = "cron", hour = "0", minute = "0")
+def revert():
+    models.database.ping(True)
+    models.book.revert_books_and_invitations()
+revert_scheduler.add_job(func = revert, trigger = "cron", hour = "0", minute = "0")
 revert_scheduler.start()
 
 #Define schedular to reconnect database
 reconnect_schedular = BackgroundScheduler()
-reconnect_schedular.add_job(func = models.database.ping, trigger = "cron", args = [True], minute = "*/10")
+reconnect_schedular.add_job(func = models.database.ping, trigger = "cron", args = [True], minute = "*/1")
 reconnect_schedular.start()
 
 if __name__ == "__main__":

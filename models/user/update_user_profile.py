@@ -9,6 +9,7 @@ def update_user_profile(userID: str, field: str, value: str):
     :param str value: value to be inserted
     '''
 
+    database.ping(True)
     cursor = database.cursor()
     sql = f"UPDATE friends SET {field} = '{value}' WHERE userID = '{userID}';"
     try:

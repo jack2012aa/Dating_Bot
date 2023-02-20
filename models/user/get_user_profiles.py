@@ -12,6 +12,7 @@ def get_user_profiles(userID: str, profile_types: list = ["userID"], all = False
     :param bool all: select all columns
     '''
 
+    database.ping(True)
     fields = ",".join(profile_types)
     cursor = database.cursor()
     if all:
