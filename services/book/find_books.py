@@ -44,4 +44,4 @@ def find_books(event: PostbackEvent):
                 quick_reply = QuickReply(items = [QuickReplyButton(action = PostbackAction(label = "下一頁", display_text = "下一頁", data = "action=find_book&type=next_page"))]))
             ])
     except Exception as err:
-        current_app.logger.error(f"[{datetime.now()}] Action error. Call: find_books({event}), {type(err)}, {str(err.args)}")
+        current_app.logger.error(f"[{datetime.now()}] Action error. Call: find_books({event}), {type(err)}, {err}")
