@@ -40,7 +40,7 @@ text_dict = {
     "Already have book": "尚有上架書籍未交換成功。若想上架新書請先下架舊書",
     "Upload book": "透過底下按鈕選擇填入書籍資料",
     "Null information": "尚未上傳{field}",
-    "Edit information": "請在底下輸入/上傳新的書籍{field}",
+    "Edit information": "請在底下輸入/上傳新的書籍{field}\n注意書名不能超過100字喔",
     "Upload photo successfully": "已成功上傳照片",
     "Please upload a photo": "請上傳照片",
     "Present information": "目前的{field}為{information}",
