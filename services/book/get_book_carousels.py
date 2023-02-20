@@ -21,7 +21,7 @@ def get_book_carousels(books: list, invite: bool):
             url = s3.generate_presigned_url(ClientMethod = "get_object", ExpiresIn = 60, Params = {"Bucket": "linedatingapp", "Key": book[0]})
             name = book[1]
             if len(name) > 40:
-                name = name[35] + "..."
+                name = name[:35] + "..."
             books_carouel.append(
                 CarouselColumn(
                     thumbnail_image_url = url,
@@ -43,7 +43,7 @@ def get_book_carousels(books: list, invite: bool):
             s3 = boto3.client("s3", aws_access_key_id = config["aws_access_key_id"], aws_secret_access_key = config["aws_secret_access_key"])
             url = s3.generate_presigned_url(ClientMethod = "get_object", ExpiresIn = 60, Params = {"Bucket": "linedatingapp", "Key": book[0]})
             if len(name) > 40:
-                name = name[35] + "..."
+                name = name[:35] + "..."
             books_carouel.append(
                 CarouselColumn(
                     thumbnail_image_url = url,

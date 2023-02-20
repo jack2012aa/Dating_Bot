@@ -6,3 +6,5 @@ log.txt
 rich_menu
 __pycache__/
 test_model.py
+mylog/
+services/old_user/
