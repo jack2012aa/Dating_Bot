@@ -261,6 +261,7 @@ def handle_text_message(event: MessageEvent):
 
     action = cache.get(event.source.user_id)[0]
     type = cache.get(event.source.user_id)[1]
+    current_app.logger.debug(f"[{datetime.now()}] Action: {action}, Type: {type}, content: {event.message.text}")
     
     if action == "edit_profile":
         if type == "email":

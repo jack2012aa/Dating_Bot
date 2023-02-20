@@ -19,7 +19,7 @@ def send_verifying_email(event: MessageEvent):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Repeat email"]))
         cache.pop(event.source.user_id)
         return 0
-    elif address.split("@")[1] != "ntu.edu.tw" or len(address.split("@")[0]) != 9:
+    elif address.split("@")[1] != "ntu.edu.tw":
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Improper email"]))  
         cache.pop(event.source.user_id)
         return 0
