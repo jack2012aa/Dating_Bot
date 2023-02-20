@@ -1,9 +1,0 @@
-from . import add_new_user, begin_edit_user_profile, begin_update_gender, begin_update_with_warning,update_user_profile, begin_update, send_verifying_email
-
-add_new_user = add_new_user.add_new_user
-begin_edit_user_profile = begin_edit_user_profile.begin_edit_user_profile
-begin_update_gender = begin_update_gender.begin_update_gender
-update_user_profile = update_user_profile.update_user_profile
-begin_update_with_warning = begin_update_with_warning.begin_update_with_warning
-begin_update = begin_update.begin_update
-send_verifying_email = send_verifying_email.send_verifying_email

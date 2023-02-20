@@ -14,8 +14,8 @@ def delete_book(userID: str, upload_time: str):
         cursor.execute(sql2)
         database.commit()
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: delete_book({userID}, {upload_time}), sql1 = {sql1}, sql2 = {sql2}")
+        
         return True
     except Exception as err:
-        current_app.logger.error(f"[{datetime.now()}] SQL error. Call: delete_book({userID}, {upload_time}), sql1 = {sql1}, sql2 = {sql2}, {type(err)}, {str(err.args)}")
+        
         return False

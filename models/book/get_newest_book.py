@@ -10,5 +10,5 @@ def get_newest_book(userID: str):
     cursor.execute(sql)
     result = [userID, cursor.fetchone()[0]]
     cursor.close()
-    current_app.logger.debug(f"[{datetime.now()}] Call: get_newest_book({userID}), sql = {sql}, result = {result}")
+    
     return result

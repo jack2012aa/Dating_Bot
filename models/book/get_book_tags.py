@@ -10,7 +10,7 @@ def get_book_tags(userID: str, upload_time: str):
     cursor.execute(sql)
     tags = list(map(lambda x: x[0], cursor.fetchall()))
     cursor.close()
-    current_app.logger.debug(f"[{datetime.now()}] Call: get_book_tags({userID}, {upload_time}), sql = {sql}, result = {tags}")
+    
     if len(tags) == 0:
         return [None]
     else:

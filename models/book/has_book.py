@@ -22,9 +22,9 @@ def has_book(userID: str, unblocked: bool = True):
         cursor.execute(sql)
         result = len(cursor.fetchall()) != 0
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: has_book({userID}, {unblocked}), sql = {sql}, result = {result}")
+        
         return result
     except:
         cursor.close()
-        current_app.logger.error(f"[{datetime.now()}] SQL error. Call: has_book({userID}, {unblocked}), sql = {sql}")
+        
         return False

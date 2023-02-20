@@ -19,9 +19,9 @@ def upload_book(userID: str):
             cursor.execute(f"INSERT INTO book_tags (userID, tag, upload_time) VALUES ('{userID}', '{tag}', '{upload_time}');")
         database.commit()
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: upload_book({userID})")
+        
         return True
     except Exception as err:
-        current_app.logger.error(f"[{datetime.now()}] SQL error. Call: upload_book({userID}), {type(err)}, {str(err.args)}")
+        
         cursor.close()
         return False

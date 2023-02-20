@@ -10,5 +10,5 @@ def has_editting_tag(userID: str, tag: str):
     cursor.execute(sql)
     exist = cursor.fetchone()[0] == 1
     cursor.close()
-    current_app.logger.debug(f"[{datetime.now()}] Call: has_editting_tag({userID}, {tag}), sql = {sql}")
+    
     return exist

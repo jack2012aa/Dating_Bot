@@ -20,9 +20,9 @@ def accept_invitation(invitorID:str, invitor_upload_time: str, invitedID: str, i
         cursor.execute(f"UPDATE books SET blocked = 'T' WHERE userID = '{invitedID}' AND upload_time = '{invited_upload_time}';")
         database.commit()
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: accept_invitation({invitorID}, {invitor_upload_time}, {invitedID}, {invited_upload_time})")
+        
         return True
     except Exception as err:
-        current_app.logger.error(f"[{datetime.now()}] Call: accept_invitation({invitorID}, {invitor_upload_time}, {invitedID}, {invited_upload_time}), {type(err)}, {str(err.args)}")
+        
         cursor.close()
         return False

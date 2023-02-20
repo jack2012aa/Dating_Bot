@@ -12,9 +12,9 @@ def is_profile_finished(userID: str):
         cursor.execute(sql)
         result = len(cursor.fetchall()) == 1
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: is_profile_finisherd({userID}), sql = {sql}, result = {result}")
+        
         return result
     except:
-        current_app.logger.error(f"[{datetime.now()}] SQL error. Call: is_profile_finisherd({userID}), sql = {sql}")
+        
         cursor.close()
         return False

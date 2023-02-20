@@ -34,5 +34,5 @@ def has_invitation(invitorID: str, invitor_upload_time, invitedID:str, invited_u
     cursor.execute(sql)
     result = len(cursor.fetchall()) != 0
     cursor.close()
-    current_app.logger.debug(f"[{datetime.now()}] Call: has_invitation({invitorID}, {invitor_upload_time}, {invitedID}, {invited_upload_time}, {accept}, {deny}, {expired}, sql = {sql}, result = {result})")
+    
     return result

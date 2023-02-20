@@ -10,7 +10,7 @@ def get_exchanged_book_and_lineID(userID: str):
     cursor.execute(sql)
     result = cursor.fetchall()[0]
     cursor.close()
-    current_app.logger.debug(f"[{datetime.now()}] Call: get_linked_lineID({userID}), sql = {sql}, result = {result}")
+    
 
     if result[0] != userID:
         return [result[0], result[1], result[2]]

@@ -18,7 +18,7 @@ def get_editting_book_information(userID: str, fields = [], all = False):
     cursor.execute(sql)
     result = cursor.fetchall()
     cursor.close()
-    current_app.logger.debug(f"[{datetime.now()}] Call: get_editting_book_information({userID}, {fields}, {all}), sql = {sql}, result = {result}")
+    
     if len(result) == 0:
         return [None]
     return list(result[0])

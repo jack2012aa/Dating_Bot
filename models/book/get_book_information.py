@@ -17,7 +17,7 @@ def get_book_information(userID: str, upload_time: str = None, fields = [], all 
     cursor.execute(sql)
     result = cursor.fetchone()
     cursor.close()
-    current_app.logger.debug(f"Call: get_book_information({userID}, {upload_time}, {fields}, {all}), sql = {sql}, result = {result}")
+    
     if result == None:
         return [None]
     return list(result)

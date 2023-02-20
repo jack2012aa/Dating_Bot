@@ -10,5 +10,5 @@ def has_empty_column(userID: str):
     cursor.execute(sql)
     result = cursor.fetchone()[0] == 0
     cursor.close()
-    current_app.logger.debug(f"[{datetime.now()}] Call: has_empty_column({userID}), sql = {sql}, result = {result}")
+    
     return result

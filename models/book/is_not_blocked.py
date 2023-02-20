@@ -10,5 +10,5 @@ def is_not_blocked(userID: str, upload_time: str):
     cursor.execute(sql)
     result = cursor.fetchone()[0] == 1
     cursor.close()
-    current_app.logger.debug(f"[{datetime.now()}] Call: is_not_blocked({userID}, {upload_time}), sql = {sql}, result = {result}")
+    
     return result

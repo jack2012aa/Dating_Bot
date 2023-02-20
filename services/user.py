@@ -1,14 +1,15 @@
-from linebot.models import QuickReplyButton, PostbackAction
-import json
-
-with open("setting.json") as json_file:
-    config = json.load(json_file)
+'''Define APIs relate to change of user profile. API will contact with model, check user's information and return an array of line reply messages.'''
+import models, smtplib, random
+from . import config
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from linebot.models import TextSendMessage, QuickReply, QuickReplyButton, PostbackAction
 
 text_dict = {
     #Relate with user
     "Welcome": "歡迎使用本服務～\n\n若想參加活動，請先使用下方功能按鈕更新資料並驗證",
     "User contract": "使用者條款\n\n當您開始使用 台大有沒友（以下簡稱「本服務」）時，代表您已閱讀、了解並同意本使用條款（以下簡稱「條款」）及隱私權政策。若您不同意本條款或隱私權政策中的內容，請勿使用本服務。\n台大有沒友 可能隨時修改本條款及隱私權政策，修改後立即生效，不另行通知，請用戶於使用本服務時，隨時參閱最新版本的使用條款。若您於使用者條款與隱私權政策變更或修改後繼續使用本平台或相關服務，代表您同意遵守所有變更或修改後之內容。\n\n隱私權\n\n本服務尊重用戶的隱私權。本服務將會以安全的方式管理自用戶處蒐集的資料，並對安全管理採取嚴格的措施。本服務依據您授予的權限，收集您使用我們服務的電腦、手機相關的資訊，包含但不限定於作業系統、硬體版本及裝置識別碼等屬性。另請謹慎保護您自己的隱私資料，請勿輕易將信用卡及私密個人資料提供與平台及其他用戶。\n\n帳戶使用規範\n\n您必須使用自己的個人資訊註冊，且不得由他人代為註冊。\n您只能擁有一個 台大有沒友 帳戶，不得重複註冊多個帳戶。\n您不得將自己的帳戶販售、轉讓給其他人使用、或與他人共用。\n使用本服務時，請您能確實遵守適當法律和道德規範。\n當您使用本平台或其相關服務時，都必須符合所有適用於您的法規。\n您同意不會做出任何可能危害本平台安全的行為、或令其他人無法登錄使用本平台、或對本平台及其內容造成損害。\n您同意當發現您的使用者帳號或密碼被非法盜用或發現本站網管安全漏洞時會立刻通知我們。\n非經本平台同意，您不會任意增加、刪減或修改本平台或其他相關服務之內容。\n您同意不會使用本平台或其他服務從事會危害本平台權益或第三方權益的行為。\n我們提供本平台與相關服務僅提供個別使用者作個人使用，不得被使用於營利相關的商業用途上。\n\n用戶與用戶間的互動\n\n我們不會審查使用者的身份或背景，也不會檢查該使用者在本平台個人檔案中所陳述資料的真實性。您有責任維持並更新您所有的個人資料，確保其為正確、最新及完整性。\n我們保留審核您所提供的個人文字、照片等資料的權利，若您提供任何不實、錯誤、不完整、不適當的資料，我們有權暫停或是終止您的帳號，並且拒絕您使用本平台服務之全部或一部份。\n我們有權利監視，但是沒有義務處理您與其他使用者的個人糾紛。您與其他使用者的互動或糾紛由您自行負所有法律上之責任。\n您理解網路交友具有某些程度上的風險。透過網路您所結交的網友有可能是未成年人或使用虛假身份或有犯罪企圖人士。若您發現有前開情形時，歡迎向我們反應，我們會採取適當措施，以維護平台之良好使用環境。\n您同意當您與其他使用者接觸時，不論是在本網站或透過其他通訊軟體、平台、電話、或直接碰面的情況，您會以適當措施保護自己的個人安全與個人資料的隱私。不論在任何情況下都不要把您的地址、電話、私密照片、銀行帳號或信用卡號碼等個人私密資料透露給其他使用者。\n如您利用本平台提供之服務進行詐欺或其他不法之情事，您需要為自身行為負責。\n\n禁止行為與承諾\n\n本服務盡力維護用戶安全，要維持本服務及用戶安全，需要用戶的協助，包括以下承諾。\n1.	您不會以任何方式利用本服務傳送給使用者垃圾電郵，直銷，連鎖信或其他商業廣告信。\n2.	您不會抓取、蒐集、索引、探勘本服務的內容與使用者資料，或以其他方式在未經我們事先許可，使用自動化方式登入 本服務（如機器人、網路蜘蛛或網路爬蟲等軟體）。\n3.	您不會進行任何會關閉、超載或損害 台大有沒友 正常運作和外觀的事情，如拒絕服務攻擊或干擾呈現頁面或其他 台大有沒友 功能等。\n4.	您不會在本服務向其它使用者廣告、推銷商品或服務，或從事非法多層次傳銷，如金字塔式傳銷。\n5.	您不會刊登、傳送或散布軟體病毒或類似惡意的電腦程式語言、檔案或程式。\n6.	您不會霸凌、恐嚇、騷擾，追蹤或傷害他人。\n7.	您不會發表或傳送給其他使用者任何不適當的內容，包含但不限於鼓吹仇恨、威脅、色情、煽動暴力或帶有裸露或血腥暴力傾向。\n8.	您不會使用本服務進行任何非法、誤導、惡意或歧視的行為。\n9.	您不會違反任何法律或法規，包括信用卡詐騙或銀行帳戶詐騙；\n10.	您不會協助或鼓勵任何違反本協議或政策的行為。\n11.	您不會刊登，傳送或複製任何受著作權、商標保護的內容或其他相關資訊。\n12.	您不會修改、改寫、翻譯、銷售或用返向工程方式拆開或破解本平台與其相關服務的任何一部份內容、技術或軟體。\n\n若您違反上述承諾及禁止事項，或經用戶據報有違反包含但不限於上述之行為時，我們有權禁止您的使用，如因而導致您有任何的損失，將由您自行負擔，本平台不負責任何因使用者帳號被終止而產生的損失。\n\n用戶責任與免責聲明\n\n台大有沒友 以本服務現況所具備之條件提供服務及其內容。我們不會答應或保證用本平台或相關服務會獲得您所期望的效果。您因為取信本服務，或是其他使用者傳送給您的任何資訊，所造成任何相關傷害或間接損失，我們將不會為此負任何法律上的責任。\n本服務可能會出現延遲、中斷、故障或是遭受網路駭客等外力入侵、其他用戶對您的不當舉止等，造成您使用上不便、連線中斷、資料喪失，或其他經濟上、身心上損失等情形。您於使用本服務時宜自行採取防護措施，本服務對於您因使用本服務而造成的損害，不負任何法律上的責任。\n\n其他條款\n\n本服務鄭重提醒用戶注意本協議禁止行為與用戶責任及免責聲明，請用戶仔細閱讀，自主考慮風險。\n未成年人應在法定監護人的陪同下閱讀本協議。本服務保留本協議一切解釋和修改權利。",
-    "How to edit profile": "1.點選「line id」或「出生年份」後，於訊息欄填入資訊並傳送\n2.點選「性別」或「希望配對性別」後，點選下方跳出之選項\n3.點選「學校信箱」後，於訊息欄填入並傳送，再至台大信箱接收驗證碼後，於訊息欄填入並傳送\n4.後續系統配對會依照所填性別進行篩選，如欲修改請至「修改資料」進行修改",
+    "How to edit profile": "1.點選「line id」或「出生年份」後，於訊息欄填入資訊並傳送\n2.點選「性別」或「希望配對性別」後，點選下方跳出之選項\n3.點選「學校信箱」後，於訊息欄填入並傳送，再至台大信箱接收驗證碼後，於訊息欄填入並傳送",
     "Null profile": "尚未設定{profile_type}",
     "Present profile": "目前的{profile_type}為 {profile}",
     "Update successfully": "已成功更改為 {value}",
@@ -19,65 +20,14 @@ text_dict = {
     "Verifying email title": "換書交友活動 認證信",
     "Verifying email content": "您的驗證碼為{code}。請勿回覆此訊息。",
     "Input verifying code": "驗證碼已發送至{email}，請輸入驗證碼",
-    "Wrong verifying code": "驗證碼錯誤，請重新索取驗證碼",
-    "Not year": "請輸入數字作為年份",
-    "Year out of range": "請輸入合理的年份",
-    "Teaching": "歡迎使用我們的交友服務！\n我們團隊希望能提供不同於交友軟體的速食戀愛體驗，透過不定期舉辦的活動讓您找到滿意的另一半！\n\n請先使用下方的功能列的「修改資料」功能，透過下方出現的選擇按鈕修改個人資料。全部填妥後才能參加我們的活動喔\n在活動中找到感興趣的人送出配對邀請，如果對方接受的話即可獲得對方的line ID\n\n快點開始配對吧~\n\n*註：操作僅能於手機中完成。個人資訊僅用於活動中",
+    "Wrong verifying code": "驗證碼錯誤，請重新輸入一次",
+    "Not year": "請輸入數字作為年份\n請重新輸入一次",
+    "Year out of range": "請輸入介於1983~2005之西元年\n請重新輸入一次",
+    "Teaching": "歡迎使用我們的交友服務！\n我們團隊希望能提供不同於交友軟體的速食戀愛體驗，透過不定期舉辦的活動讓您找到滿意的另一半！\n\n請先使用下方的功能列的「全部設定」功能，透過下方出現的選擇按鈕修改個人資料。全部填妥後才能參加我們的活動喔\n在活動中找到感興趣的人送出配對邀請，如果對方接受的話即可獲得對方的line ID\n\n快點開始配對吧~\n\n*註：操作僅能於手機中完成。個人資訊僅用於活動中",
     "My profile": "line ID: {lineID}\n性別: {gender}\n希望配對性別: {expect_gender}\n出生年份{year}\n信箱{email}",
     "Contact info": "Email: letsmeettoday.service@gmail.com\nFacebook: https://www.facebook.com/profile.php?id=100003508569457&mibextid=LQQJ4d",
-
-    #Relate with book
-    "Activity info": "你喜歡藉由分享閱讀的感動與喜悅來結交更多朋友嗎？\n這是一個結合讀書與交友的活動，透過這個活動不只可以將喜歡的書推廣出去，還能認識更多的書籍愛好者。\n心動不如馬上行動！",
-    "Upload method": "點選「上傳新書」輸入書籍資料:\n\n1.點選「書名」、「心得」後，於訊息欄填入資訊並傳送\n2.點選「照片」後，於訊息欄選擇照片並傳送\n3.點選「分類」後，點選分類；如果選錯，重新選擇即可\n4.點選「標籤」後，點選標籤；如欲複選請重複點選\n5.點選「確認上傳」，如無誤再按下「確認」，完成上傳",
-    "Find method": "點選「尋找新書」，可選擇「分類」或「標籤」或「隨機」三種配對方式，看到喜歡的書籍可送出配對邀請\n\n1.「分類」：可單選或重複點選進行多選，選擇完後點選「搜尋」進行配對\n2.「標籤」：可單選或重複點選進行多選，選擇完後點選「搜尋」進行配對\n3.「隨機」：會直接跳出配對選項",
-    "Invite and delete method": "點選「配對邀請」查看有無邀請，如「接受邀請」會收到對方line id，並於隔日才能再次配對\n\n點選「自己的書」可以查看或刪除原本上架的書籍；刪除後原先送出的配對邀請會刪除，請再重新「上傳新書」進行配對",
-    "Activity warning": "注意事項：\n1.一次只能上架一本書\n2.一本書一天只能交換一次",
-    "Profile not finished": "請先將個人資訊填寫完畢再參加活動",
-    "Already have book": "尚有上架書籍未交換成功。若想上架新書請先下架舊書",
-    "Upload book": "透過底下按鈕選擇填入書籍資料",
-    "Null information": "尚未上傳{field}",
-    "Edit information": "請在底下輸入/上傳新的書籍{field}\n注意書名不能超過100字喔",
-    "Upload photo successfully": "已成功上傳照片",
-    "Please upload a photo": "請上傳照片",
-    "Present information": "目前的{field}為{information}",
-    "Choose information": "請選擇以下{field}",
-    "Upload successfully": "已成功更改為 {value}",
-    "Delete tag": "已成功刪除{tag}",
-    "Insert tag": "已成功添加{tag}",
-    "Empty column": "書籍資料尚未填妥",
-    "Upload book successfully": "已成功上架書籍",
-    "Find books": "分類、標籤：選擇希望尋找的分類及標籤（可複選）\n搜尋：依照選擇的分類及標籤進行搜尋，符合越多條件的書會被排在越前面\n隨機：不考慮分類及標籤、隨機找一本書",
-    "Empty search fields": "尚未選擇搜尋條件",
-    "Choose search fields": "請選擇以下分類/標籤",
-    "Present search fields": "目前以選擇搜尋條件：\n{values}",
-    "Chosen": "已選擇",
-    "More": "更多資訊",
-    "No such books": "沒有找到符合的書籍喔，請用其他條件搜尋或是之後再看看吧",
-
-    #Relate with invite
-    "Send invitation": "送出交換邀請",
-    "Send invitation successfully": "已送出交換邀請",
-    "Don't have book": "請先上架書籍",
-    "Already have invitation": "已寄出邀請",
-    "No invite": "尚未有交換邀請",
-    "Accept invitation": "接受邀請",
-    "Deny invitation": "拒絕邀請",
-    "Lucky": "配對成功！快點聯繫對方吧！\nline ID: {lineID}",
-    "Finished": "已經配對成功咯，快去配對邀請查看",
-    "Too late": "已經被別人捷足先登咯，明天再看看吧",
-    "Deny": "拒絕成功",
-    "Finished so cannot delete": "已經配對成功咯，無法刪除書籍\n快去配對邀請查看",
-    "The book is blocked": "這本書已經下架或今天已經交換成功，再試試看其他書吧",
-    "Duplicate invitation": "已經送出邀請了喔",
-
-    "See on the phone": "請於手機端觀看",
-    "Cancel action": "已取消動作",
-    "Verified": "已通過驗證",
-    "Upload photo": "以上為目前上傳的照片\n請在底下上傳照片",
-    "Choose categories": "請選擇以下分類",
-    "Delete successfully": "已成功刪除 {message}",
-    "Edit book": "請在底下輸入資訊",
-    "Search result": "共搜尋到{num}筆結果",
+    "Error message": "發生未知錯誤，請再試一次或是聯繫服務人員",
+    "lineID too long": "您的line id過長，請聯繫服務人員"
 }
 
 department_dict = {
@@ -420,3 +370,185 @@ department_dict = {
 }
 
 cancel_quick_reply_button = QuickReplyButton(action = PostbackAction(label = "取消", display_text = "取消動作",data = "action=cancel&type=none"))
+
+def add_new_user(userID: str):
+    '''
+    Insert userID into friends table and show welcome message. Ignoring whether the user has already followed or not.
+    :param str userID: line userID
+    :return an array of a single welcome text message.
+    '''
+
+    models.user.insert_user(userID)
+    return [TextSendMessage(text = text_dict["Welcome"])]
+
+def begin_modify():
+    '''
+    Return a text message of teaching how to edit profile with quick replies to choose which type of profile to be changed.
+    '''
+
+    quick_reply = QuickReply(
+                items = [
+                    QuickReplyButton(action = PostbackAction(label = "line id", data = "action=edit_profile&type=begin_lineID")),
+                    QuickReplyButton(action = PostbackAction(label = "性別", data = "action=edit_profile&type=begin_gender")),
+                    QuickReplyButton(action = PostbackAction(label = "希望配對性別", data = "action=edit_profile&type=begin_expect_gender")),
+                    QuickReplyButton(action = PostbackAction(label = "出生年份", data = "action=edit_profile&type=begin_birth_year")),
+                    QuickReplyButton(action = PostbackAction(label = "學校信箱", data = "action=edit_profile&type=begin_email")),
+                    cancel_quick_reply_button
+                    ])
+    return [TextSendMessage(text = text_dict["How to edit profile"], quick_reply = quick_reply)]
+
+def begin_edit_gender(userID: str, type: str):
+    '''
+    Show present gender setting and give quick replies to choose gender. Data in the PostbackAction: "action=edit_profile&type=choose_gender&field={type}&value=男"
+    :param str userID: line userID
+    :param str type: "begin_gender" or "begin_expect_gender"
+    '''
+
+    type = type[5:]
+    quick_reply = QuickReply(
+                items = [
+                    QuickReplyButton(action = PostbackAction(label = "男", display_text = "男" ,data = f"action=edit_profile&type=choose_gender&field={type}&value=男")),
+                    QuickReplyButton(action = PostbackAction(label = "女", display_text = "女",data = f"action=edit_profile&type=choose_gender&field={type}&value=女")),
+                    QuickReplyButton(action = PostbackAction(label = "非二元", display_text = "非二元",data = f"action=edit_profile&type=choose_gender&field={type}&value=非二元")),
+                    cancel_quick_reply_button
+                ]
+            )
+    present_gender = models.user.get_user_profiles(userID, type)[0]
+    profile_dict = {"gender":"性別","expect_gender":"希望配對性別"}
+
+    if present_gender == None:
+        return [TextSendMessage(text = text_dict["Null profile"].format(profile_type = profile_dict[type])), TextSendMessage(text = text_dict["Choose gender"], quick_reply = quick_reply)]
+    else:
+        return [TextSendMessage(text = text_dict["Present profile"].format(profile_type = profile_dict[type], profile = present_gender)), TextSendMessage(text = text_dict["Choose gender"], quick_reply = quick_reply)]
+
+def edit_user_profile(userID: str, field: str, value: str):
+    '''
+    Edit user profile(field). Return an message to tell the user to redo if exception happens.
+    :param str userID: line userID
+    :param str field: "lineID", "gender", "expect_gender", "birth_year" or "email"
+    :param str value: value to be inserted
+    '''
+
+    if models.user.update_user_profile(userID, field, value):
+        return [TextSendMessage(text = text_dict["Update successfully"].format(value = value))]
+    else:
+        return [TextSendMessage(text = text_dict["Error message"])]
+
+def begin_edit_string_field(userID: str, type: str):
+    '''
+    Show present profile setting and teaching message.
+    :param str userID: line userID
+    :param str type: "begin_lineID", "begin_birth_year" or "begin_email"
+    :param str warning_message: warning message about 
+    '''
+    
+    type = type[5:]
+    profile_dict = {"email":"學校信箱","birth_year":"出生年份","lineID":"line id"}
+    value = models.user.get_user_profiles(userID, [type])[0]
+    
+    if type == "birth_year":
+        warning_message = "\n請輸入介於1983~2005之西元年"
+    elif type == "email":
+        warning_message = "\n請使用台大信箱，需完成認證才算更改完畢"
+    elif type == "line id":
+        warning_message = ""
+
+    if value != None:
+        return [TextSendMessage(text = text_dict["Present profile"].format(profile_type = type, profile = value)), TextSendMessage(text = text_dict["Edit profile"].format(profile_type = type) + warning_message, quick_reply = QuickReply(items = [cancel_quick_reply_button]))]
+    else:
+        return [TextSendMessage(text = text_dict["Null profile"].format(profile_type = profile_dict[type])), TextSendMessage(text = text_dict["Edit profile"].format(profile_type = profile_dict[type]) + warning_message, quick_reply = QuickReply(items = [cancel_quick_reply_button]))]
+
+def teaching():
+    '''
+    Return teaching text message.
+    '''
+
+    return [TextSendMessage(text = text_dict["Teaching"])]
+
+def contact():
+    '''
+    Return contact text message.
+    '''
+
+    return [TextSendMessage(text = text_dict["Contact info"])]
+
+def send_verifying_email(email: str):
+    '''
+    Send a verifying email if it is a ntu mail. If it is duplicated or isn't an ntu mail, return error message.
+    :param str email: a ntu mail, must end with "ntu.edu.tw"
+    :return a text message, bool indicate whether the email is legal, and verifying code
+    '''
+
+    if models.user.is_email_duplicated(email):
+        return [TextSendMessage(text = text_dict["Repeat email"])], False, None
+
+    #Check is it a ntu mail
+    if email.split("@")[1] != "ntu.edu.tw":
+        return [TextSendMessage(text = text_dict["Improper email"])], False, None
+
+    #Send verifying email
+    while True:
+        content = MIMEMultipart()
+        content["subject"] = text_dict["Verifying email title"]
+        content["from"] = config["DOMAIN_MAIL_ACCOUNT"]
+        content["to"] = email
+        verifying_code = str(random.randint(100000, 999999))
+        content.attach(MIMEText(text_dict["Verifying email content"].format(code = verifying_code)))
+        with smtplib.SMTP(host="smtp.gmail.com", port="587") as smtp:
+            try:
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.login(config["DOMAIN_MAIL_ACCOUNT"], config["DOMAIN_MAIL_PASSWORD"])
+                smtp.send_message(content)
+                break
+            except Exception as e:
+                print("Errpr message: ", e)
+
+    return [TextSendMessage(text = text_dict["Input verifying code"].format(email = email), quick_reply = QuickReply([cancel_quick_reply_button]))], True, verifying_code
+
+def verify_email(userID: str, correct_code: str, entered_code: str, email: str):
+    '''
+    If entered_code == correct_code, update email into database, else return repeat message.
+    :param str userID: line userID
+    :param str correct_code: the correct verfy code
+    :param str entered_code: the code entered by user
+    :param str user: user's email
+    :return a message and bool indicate whether entered_code is correct
+    '''
+
+    if correct_code != entered_code:
+        return [TextSendMessage(text = text_dict["Wrong verifying code"], quick_reply = QuickReply(items = [cancel_quick_reply_button]))], False
+    else:
+        department = department_dict.get(str(email[3:7]).upper(), None)
+        if department != None:
+            models.user.update_user_profile(userID, "department", department)
+        return edit_user_profile(userID, "email", email), True
+
+def edit_birth_year(userID: str, birth_year: str):
+    '''
+    If birth_year is an int between 1983 and 2005, update user's profile, else return repeat message.
+    :param str userID: line userID
+    :param str birth_year: an int between 1983 and 2005
+    :return a message and bool indicating whether the birth_year is valid
+    '''
+
+    try:
+        birth_year = int(birth_year)
+    except:
+        return [TextSendMessage(text = text_dict["Not year"], quick_reply = QuickReply([cancel_quick_reply_button]))], False
+
+    if birth_year <= 1983 or birth_year >= 2005:
+        return [TextSendMessage(text = text_dict["Year out of range"], quick_reply = QuickReply([cancel_quick_reply_button]))], False
+    else:
+        return edit_user_profile(userID, "birth_year", str(birth_year)), True
+
+def edit_lineID(userID: str, lineID: str):
+    '''
+    If len(lineID) > 120, return error message.
+    :param str userID: line userID
+    :param str lineID: line lineID
+    '''
+
+    if len(lineID) > 120:
+        return [TextSendMessage(text = text_dict["lineID too long"])]
+    return edit_user_profile(userID, "lineID", lineID)

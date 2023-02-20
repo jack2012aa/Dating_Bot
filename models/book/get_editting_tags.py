@@ -11,7 +11,7 @@ def get_editting_tags(userID: str):
     result = cursor.fetchall()
     cursor.close()
     result = list(map(lambda x: x[0], result))
-    current_app.logger.debug(f"[{datetime.now()}] Call: get_editting_tags({userID}), sql = {sql}, result = result")
+    
     if len(result) == 0:
         return [None]
     return result

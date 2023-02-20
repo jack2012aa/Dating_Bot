@@ -10,7 +10,7 @@ def get_all_invitations(userID: str):
     cursor.execute(sql)
     result = list(map(lambda x: list(x), cursor.fetchall()))
     cursor.close
-    current_app.logger.debug(f"[{datetime.now()}] Call: get_all_invitations({userID}), sql = {sql}")
+    
     if len(result) == 0:
         return None
     return result

@@ -11,9 +11,9 @@ def insert_invitation(invitorID: str, invitor_upload_time: str, invitedID: str, 
         cursor.execute(sql)
         database.commit()
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: insert_invitation({invitorID}, {invitor_upload_time}, {invitedID}, {invited_upload_time}), sql = {sql}")
+        
         return True
     except Exception as err:
         cursor.close()
-        current_app.logger.error(f"[{datetime.now()}] Call: insert_invitation({invitorID}, {invitor_upload_time}, {invitedID}, {invited_upload_time}), sql = {sql}, {type(err)}, {str(err.args)}")
+        
         return False

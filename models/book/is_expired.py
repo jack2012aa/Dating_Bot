@@ -13,5 +13,5 @@ def is_expired(invitorID: str, invitor_upload_time: str, invitedID: str, invited
         return True
     result = expired[0] == "T"
     cursor.close()
-    current_app.logger.debug(f"[{datetime.now()}] Call: is_expired({invitorID}, {invitor_upload_time}, {invited_upload_time}, {invited_upload_time}), sql = {sql}, result = {result}")
+    
     return result

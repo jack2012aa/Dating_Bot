@@ -17,7 +17,7 @@ def get_information_string(userID: str, editting: bool, upload_time: str = None)
         else:
             tags_string = " ".join(tags)
         string = f"書名：{info[1]}\n分類：{info[4]}\n標籤：{tags_string}\n心得：{info[2]}"
-        current_app.logger.debug(f"[{datetime.now()}] Call: get_information_string({userID}, {editting}), info: {info}, tags: {tags}")
+        
         return [string, info[3]]
 
     elif not editting:
@@ -28,8 +28,8 @@ def get_information_string(userID: str, editting: bool, upload_time: str = None)
         else:
             tags_string = " ".join(tags)
         string = f"書名：{info[0]}\n分類：{info[3]}\n標籤：{tags_string}\n心得：{info[1]}"
-        current_app.logger.debug(f"[{datetime.now()}] Call: get_information_string({userID}, {editting}), info: {info}, tags: {tags}")
+        
         return [string, info[2]]
         
-    current_app.logger.debug(f"[{datetime.now()}] Call: get_information_string({userID}, {editting})")
+    
     return None

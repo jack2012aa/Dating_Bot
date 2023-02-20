@@ -18,9 +18,9 @@ def get_random_book(userID: str, gender: str, expect_gender: str):
             return None
         result = list(result)
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: get_random_book({userID}, {gender}, {expect_gender}), sql = {sql}, result = {result}")
+        
         return result
     except Exception as err:
         cursor.close()
-        current_app.logger.debug(f"[{datetime.now()}] Call: get_random_book({userID}, {gender}, {expect_gender}), sql = {sql}, {type(err)}, {str(err.args)}")
+        
         return None
