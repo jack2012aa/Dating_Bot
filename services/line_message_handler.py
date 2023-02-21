@@ -1,9 +1,8 @@
 from flask import abort, current_app
 from linebot import (LineBotApi, WebhookHandler)
-from linebot.models import TextSendMessage, FollowEvent, PostbackEvent, MessageEvent, TextMessage, ImageMessage
+from linebot.models import FollowEvent, PostbackEvent, MessageEvent, TextMessage, ImageMessage
 from linebot.exceptions import (InvalidSignatureError)
-from . import config, user
-import models
+from . import config, user_actions_manager
 
 '''
 Handle all line events and log them.
@@ -37,7 +36,7 @@ def handle_new_follower(event: FollowEvent):
     '''Show welcome messages and insert user into database.'''
 
     current_app.logger.info(f"action: follow, type: follow, user: {event.source.user_id}")
-    return line_bot_api.reply_message(event.reply_token, user.add_new_user(event.source.user_id))
+    return line_bot_api.reply_message(event.reply_token, user_actions_manager.add_new_user(event.source.user_id))
 
 @handler.add(PostbackEvent)
 def handle_postback(event: PostbackEvent):
@@ -52,207 +51,79 @@ def handle_postback(event: PostbackEvent):
 
         if type == "begin_modify":
             current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
-            return line_bot_api.reply_message(event.reply_token, user.begin_modify())
+            return line_bot_api.reply_message(event.reply_token, user_actions_manager.begin_modify(event.source.user_id))
 
         elif type == "begin_gender" or type == "begin_expect_gender":
             current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
-            return line_bot_api.reply_message(event.reply_token, user.begin_edit_gender(event.source.user_id, type))
+            return line_bot_api.reply_message(event.reply_token, user_actions_manager.begin_edit_gender(event.source.user_id, type))
 
         elif type == "choose_gender":
             field = data[2].split("=")[1]
             value = data[3].split("=")[1]
             current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, field: {field}, value: {value}")
-            return line_bot_api.reply_message(event.reply_token, user.edit_user_profile(event.source.user_id, field, value))
+            return line_bot_api.reply_message(event.reply_token, user_actions_manager.edit_user_profile(event.source.user_id, field, value))
         
         elif type in ["begin_birth_year", "begin_email", "begin_lineID"]:
-            cache[event.source.user_id] = [action, type[5:]]
+            cache[event.source.user_id] = [action, type[6:]]
             current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
-            return line_bot_api.reply_message(event.reply_token, user.begin_edit_string_field(event.source.user_id, type))
+            return line_bot_api.reply_message(event.reply_token, user_actions_manager.begin_edit_string_field(event.source.user_id, type))
+
+        elif type == "begin_edit_all":
+            cache
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, user_actions_manager.begin_edit_all(event.source.user_id))
+
+        elif type == "continuous_setting_gender":
+            gender = data[2].split("=")[1]
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, gender: {gender}")
+            messages, valid = user_actions_manager.continuous_setting_gender(event.source.user_id, gender)
+            return line_bot_api.reply_message(event.reply_token, messages)
+
+        elif type == "continuous_setting_expect_gender":
+            expect_gender = data[2].split("=")[1]
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, expect_gender: {expect_gender}")
+            messages, valid = user_actions_manager.continuous_setting_expect_gender(event.source.user_id, expect_gender)
+            if valid:
+                cache[event.source.user_id] = [action, "continuous_setting_lineID"]
+            return line_bot_api.reply_message(event.reply_token, messages)
+
+        elif type == "skip":
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            user_cache = cache.get(event.source.user_id, None)
+            if user_cache != None:
+                type = user_cache[1]
+
+                #if the user should set lineID originally, skip it and begin set birth_year
+                if type == "continuous_setting_lineID":
+                    cache[event.source.user_id] = [action, "continuous_setting_birth_year"]
+                    return line_bot_api.reply_message(event.reply_token, user_actions_manager.continuous_setting_lineID(event.source.user_id, "skip")[0])
+
+                #if the user should set birth_year originally, skip it and begin set email
+                if type == "continuous_setting_birth_year":
+                    cache[event.source.user_id] = [action, "continuous_setting_email"]
+                    return line_bot_api.reply_message(event.reply_token, user_actions_manager.continuous_setting_birth_year(event.source.user_id, "skip")[0])
 
     elif action == "teaching":
+
         current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
-        return line_bot_api.reply_message(event.reply_token, user.teaching())
+
+        if type == "teaching":
+            return line_bot_api.reply_message(event.reply_token, user_actions_manager.teaching())
+
+        elif type == "contract":
+            return line_bot_api.reply_message(event.reply_token, user_actions_manager.contract())
+        
+        elif type in ["lineID", "gender", "birth_year", "email"]:
+            return line_bot_api.reply_message(event.reply_token, user_actions_manager.teach(type))
 
     elif action == "contact_us":
         current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
-        return line_bot_api.reply_message(event.reply_token, user.contact())
-
-    elif action == "upload_book":
-
-        if not models.user.is_profile_finished(event.source.user_id):
-            
-            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Profile not finished"]))
-
-        elif models.book.has_book(event.source.user_id, True):
-            
-            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Already have book"]))
-
-        elif models.book.has_accept_invitation(event.source.user_id):
-            
-            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Finished"]))
-
-        elif type == "begin":
-            
-            return book.begin_edit_book(event)
-
-        elif type == "photo":
-            
-            return book.begin_edit_photo(event)
-        
-        elif type == "category" or type == "tag":
-            
-            return book.begin_edit_tag_or_category(event, type)
-
-        elif type == "choose_category":
-            category = data[2].split("=")[1]
-            
-            return book.insert_or_update_book(event, type, category)
-
-        elif type == "choose_tag":
-            tag = data[2].split("=")[1]
-            
-            return book.insert_or_delete_tag(event, tag)
-
-        elif type == "begin_upload":
-            
-            return book.begin_upload(event)
-
-        elif type == "upload":
-            
-            return book.upload_editting_book(event)
-
-        else:
-            
-            return book.begin_edit(event, type)
-
-    elif action == "act_info":
-
-        
-        return line_bot_api.reply_message(event.reply_token, [
-            TextSendMessage(text_dict["Activity info"]),
-            TextSendMessage(text_dict["Upload method"]), 
-            TextSendMessage(text_dict["Find method"]), 
-            TextSendMessage(text_dict["Invite and delete method"]), 
-            TextSendMessage(text_dict["Activity warning"])
-        ])
-
-    elif action == "find_book":
-
-        if models.book.has_accept_invitation(event.source.user_id):
-            
-            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Finished"]))
-        
-        elif not models.book.has_book(event.source.user_id, True):
-            
-            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Null information"].format(field = "書籍")))
-
-        elif type == "begin":
-            
-            return book.begin_find_book(event)
-
-        elif type == "tags" or type == "categories":
-            
-            return book.begin_choose_tags_or_categories(event, type)
-
-        elif type == "choose_tags" or type == "choose_categories":
-            tmp = data[2].split("=")[1]
-            
-            return book.add_chosen_tags_or_categories(event, type, tmp)
-        
-        elif type == "find":
-            return book.find_books(event)
-
-        elif type == "next_page":
-            
-            return book.next_search(event)
-
-        elif type == "show_book_detail":
-            return book.show_book_detail(event, data[2].split("=")[1].split("+")[0], data[2].split("=")[1].split("+")[1])
-
-        elif type == "my_book":
-            
-            book.get_my_book(event)
-
-        elif type == "random_find":
-            
-            return book.get_random_book(event)
-
-    elif action == "delete":
-
-        if models.book.has_accept_invitation(event.source.user_id):
-            
-            return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Finished so cannot delete"]))
- 
-        
-        models.book.delete_book(data[2].split("=")[1].split("+")[0], data[2].split("=")[1].split("+")[1])
-        return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Delete tag"].format(tag = "書籍")))
-
-    elif action == "invite":
-
-        if type == "my_invitation":
-            return book.get_my_invitation(event, event.source.user_id)
-
-        elif type == "next_page":
-            
-            return book.show_invitations(event, True)
-
-        elif type == "invite":
-            invitedID = data[2].split("=")[1].split("+")[0]
-            invited_upload_time = data[2].split("=")[1].split("+")[1]
-            my_book = models.book.get_newest_book(event.source.user_id)
-            if models.book.has_accept_invitation(event.source.user_id):
-                
-                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Finished"]))
-
-            elif not models.book.is_not_blocked(invitedID, invited_upload_time):
-                
-                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["The book is blocked"]))
-
-            elif models.book.has_invitation(my_book[0], my_book[1], invitedID, invited_upload_time):
-                
-                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Duplicate invitation"]))
-
-            else:
-                if models.book.is_not_blocked(my_book[0], my_book[1]):
-                    models.book.insert_invitation(my_book[0], my_book[1], invitedID, invited_upload_time)
-                    
-                    return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Send invitation successfully"]))
-                else:
-                    
-                    return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Null information"].format(field = "書籍")))
-
-        elif type == "accept":
-            invitorID, invitor_upload_time = data[2].split("=")[1].split("+")
-            my_book = models.book.get_newest_book(event.source.user_id)
-            
-            if models.book.has_accept_invitation(event.source.user_id):
-                
-                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Finished"]))
-            
-            elif models.book.is_expired(invitorID, invitor_upload_time, my_book[0], my_book[1]):
-                
-                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Too late"]))
-
-            else:
-                models.book.accept_invitation(invitorID, invitor_upload_time, my_book[0], my_book[1])
-                
-                return book.get_my_invitation(event, event.source.user_id)
-
-        elif type == "deny":
-            if models.book.has_accept_invitation(event.source.user_id):
-                
-                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Finished"]))
-
-            invitorID, invitor_upload_time = data[2].split("=")[1].split("+")
-            my_book = models.book.get_newest_book(event.source.user_id)
-            if models.book.is_expired(invitorID, invitor_upload_time, my_book[0], my_book[1]):
-                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Deny"]))
-            if models.book.deny_invitation(invitorID, invitor_upload_time, my_book[0], my_book[1]):
-                return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["Deny"]))
+        return line_bot_api.reply_message(event.reply_token, user_actions_manager.contact())
 
     elif action == "cancel":
         cache.pop(event.source.user_id, None)
-        return line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Cancel action"]))
+        current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+        return line_bot_api.reply_message(event.reply_token, user_actions_manager.cancel())
     
 @handler.add(MessageEvent, message = TextMessage)
 def handle_text_message(event: MessageEvent):
@@ -265,7 +136,7 @@ def handle_text_message(event: MessageEvent):
         
         if type == "email":
             current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, email: {event.message.text}")
-            message, valid, code = user.send_verifying_email(event.message.text)
+            message, valid, code = user_actions_manager.send_verifying_email(event.message.text)
             if not valid:
                 cache.pop(event.source.user_id, None)
                 return line_bot_api.reply_message(event.reply_token, message)
@@ -277,7 +148,7 @@ def handle_text_message(event: MessageEvent):
             code = cache.get(event.source.user_id)[2]
             email = cache.get(event.source.user_id)[3]
             current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, code: {code}, email: {event.message.text}, entered_code: {event.message.text}")
-            message, correct = user.verify_email(event.source.user_id, code, event.message.text, email)
+            message, correct = user_actions_manager.verify_email(event.source.user_id, code, event.message.text, email)
             if not correct:
                 return line_bot_api.reply_message(event.reply_token, message)
             else:
@@ -286,7 +157,7 @@ def handle_text_message(event: MessageEvent):
 
         elif type == "birth_year":
             current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, birth_year: {event.message.text}")
-            message, valid = user.edit_birth_year(event.source.user_id, event.message.text)
+            message, valid = user_actions_manager.edit_birth_year(event.source.user_id, event.message.text)
             if not valid:
                 return line_bot_api.reply_message(event.reply_token, message)
             else:
@@ -296,13 +167,32 @@ def handle_text_message(event: MessageEvent):
         elif type == "lineID":
             current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, lineID: {event.message.text}")
             cache.pop(event.source.user_id, None)
-            return user.edit_lineID(event.source.user_id, event.message.text)
+            return line_bot_api.reply_message(event.reply_token, user_actions_manager.edit_lineID(event.source.user_id, event.message.text))
 
-    elif action == "upload_book":
-        return book.insert_or_update_book(event, type, event.message.text)
+        elif type == "continuous_setting_lineID":
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, lineID: {event.message.text}")
+            message, valid = user_actions_manager.continuous_setting_lineID(event.source.user_id, event.message.text)
+            if valid:
+                cache[event.source.user_id] = [action, "continuous_setting_birth_year"]
+            return line_bot_api.reply_message(event.reply_token, message)
+
+        elif type == "continuous_setting_birth_year":
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, birth_year: {event.message.text}")
+            message, valid = user_actions_manager.continuous_setting_birth_year(event.source.user_id, event.message.text)
+            if valid:
+                cache[event.source.user_id] = [action, "continuous_setting_email"]
+            return line_bot_api.reply_message(event.reply_token, message)
+
+        elif type == "continuous_setting_email":
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, email: {event.message.text}")
+            message, valid, code = user_actions_manager.send_verifying_email(event.message.text)
+            if not valid:
+                message = user_actions_manager.append_repeat_message(message)
+            else:
+                cache[event.source.user_id] = ["edit_profile", "verify_email", code, event.message.text]
+            return line_bot_api.reply_message(event.reply_token, message)
 
 @handler.add(MessageEvent, message = ImageMessage)
 def handle_image(event: MessageEvent):
     
-    if cache.pop(event.source.user_id, None)[1] == "photo":
-       return book.upload_photo(event)
+    return

@@ -4,5 +4,9 @@ tmp.txt
 log.txt
 .venv/
 rich_menu
-__pycache__/
+services/__pycache__/
+services/book/__pycache__/
+models/__pycache__/
+models/book/__pycache__/
 test_model.py
+mylog/
