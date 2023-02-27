@@ -2,7 +2,7 @@ from flask import abort, current_app
 from linebot import (LineBotApi, WebhookHandler)
 from linebot.models import FollowEvent, PostbackEvent, MessageEvent, TextMessage, ImageMessage
 from linebot.exceptions import (InvalidSignatureError)
-from . import config, user_actions_manager
+from . import config, user_actions_manager, upload_book_actions_manager
 
 '''
 Handle all line events and log them.
@@ -103,6 +103,100 @@ def handle_postback(event: PostbackEvent):
                     cache[event.source.user_id] = [action, "continuous_setting_email"]
                     return line_bot_api.reply_message(event.reply_token, user_actions_manager.continuous_setting_birth_year(event.source.user_id, "skip")[0])
 
+    elif action == "upload_book":
+
+        message, valid = upload_book_actions_manager.is_valid(event.source.user_id)
+        if not valid:
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, message)
+
+        if type == "begin":
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.choose_what_to_edit(event.source.user_id))
+        
+        elif type in ["begin_edit_category","begin_edit_tag"]:
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.begin_edit(event.source.user_id, type, False))
+        
+        elif type in ["begin_edit_name","begin_edit_summary","begin_edit_photo"]:
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            cache[event.source.user_id] = [action, type[6:]]
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.begin_edit(event.source.user_id, type, False))
+
+        elif type == "edit_category":
+            category = data[2].split("=")[1]
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, category: {category}")
+            message, valid = upload_book_actions_manager.edit_category(event.source.user_id, category)
+            if not valid:
+                return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_category", False))
+            #Check whether it is in continuous edit mode
+            status = cache.get(event.source.user_id, None)
+            if status != None and status[1] == "edit_category_continuously":
+                return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_tag", True))
+            return line_bot_api.reply_message(event.reply_token, message)
+
+        elif type == "edit_tag":
+            tag = data[2].split("=")[1]
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, tag: {tag}")
+            message, valid = upload_book_actions_manager.edit_tag(event.source.user_id, tag)
+            return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_tag", False))
+
+        elif type == "begin_edit_all":
+            #begin from edit name
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            cache[event.source.user_id] = [action, "edit_name_continuously"]
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.get_continuous_edit_order() + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_name", True))
+
+        elif type == "skip":
+
+            #Get present status in cache
+            status = cache.get(event.source.user_id, None)
+            if status == None:
+                return
+            present = status[1]
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, present: {present}")
+
+            #Skip present status and move to next step
+            if present == "edit_name_continuously":
+                cache[event.source.user_id] = [action, "edit_summary_continuously"]
+                return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_summary", True))
+
+            elif present == "edit_summary_continuously":
+                cache[event.source.user_id] = [action, "edit_photo_continuously"]
+                return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_photo", True))
+            
+            elif present == "edit_photo_continuously":
+                cache[event.source.user_id] = [action, "edit_category_continuously"]
+                return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_category", True))
+
+            elif present == "edit_category_continuously":
+                cache.pop(event.source.user_id, None)
+                return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_tag", True))
+
+        elif type == "finish":
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.finish())
+
+        elif type == "begin_upload":
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.begin_upload(event.source.user_id))
+
+        elif type == "upload":
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.upload(event.source.user_id)[0])
+
+    elif action == "act_info":
+
+        current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+
+        if type == "act_info":
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.act_info())
+
+        elif type == "upload_book":
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.how_to_upload())
+
+        elif type in ["how_to_edit_name","how_to_edit_summary","how_to_edit_photo","how_to_edit_category","how_to_edit_tag"]:
+            return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.how_to_edit(type))
+        
     elif action == "teaching":
 
         current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
@@ -129,8 +223,11 @@ def handle_postback(event: PostbackEvent):
 def handle_text_message(event: MessageEvent):
     '''Handle message used for editting'''
 
-    action = cache.get(event.source.user_id)[0]
-    type = cache.get(event.source.user_id)[1]
+    status = cache.get(event.source.user_id, None)
+    if status == None:
+        return
+    action = status[0]
+    type = status[1]
     
     if action == "edit_profile":
         
@@ -192,7 +289,66 @@ def handle_text_message(event: MessageEvent):
                 cache[event.source.user_id] = ["edit_profile", "verify_email", code, event.message.text]
             return line_bot_api.reply_message(event.reply_token, message)
 
+    elif action == "upload_book":
+
+        if type == "edit_name":
+            current_app.logger.info(f"action:{action}, type:{type}, user: {event.source.user_id}, name: {event.message.text}")
+            message, valid = upload_book_actions_manager.edit_name(event.source.user_id, event.message.text)
+            if not valid:
+                return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_name", False))
+            cache.pop(event.source.user_id, None)
+            return line_bot_api.reply_message(event.reply_token, message)
+        
+        elif type == "edit_name_continuously":
+            current_app.logger.info(f"action:{action}, type:{type}, user: {event.source.user_id}, name: {event.message.text}")
+            message, valid = upload_book_actions_manager.edit_name(event.source.user_id, event.message.text)
+            if not valid:
+                return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_name", False))
+            #Turn to edit summary
+            cache[event.source.user_id] = [action, "edit_summary_continuously"]
+            return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_summary", True))
+
+        elif type == "edit_summary":
+            current_app.logger.info(f"action:{action}, type:{type}, user: {event.source.user_id}, name: {event.message.text}")
+            message, valid = upload_book_actions_manager.edit_summary(event.source.user_id, event.message.text)
+            if not valid:
+                return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_summary", False))
+            cache.pop(event.source.user_id, None)
+            return line_bot_api.reply_message(event.reply_token, message)
+
+        elif type == "edit_summary_continuously":
+            current_app.logger.info(f"action:{action}, type:{type}, user: {event.source.user_id}, name: {event.message.text}")
+            message, valid = upload_book_actions_manager.edit_summary(event.source.user_id, event.message.text)
+            if not valid:
+                return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_summary", False))
+            #Turn to edit photo
+            cache[event.source.user_id] = [action, "edit_photo_continuously"]
+            return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_photo", True))
+
 @handler.add(MessageEvent, message = ImageMessage)
 def handle_image(event: MessageEvent):
     
-    return
+    status = cache.get(event.source.user_id, None)
+    if status == None:
+        return
+    action = status[0]
+    type = status[1]
+
+    if action == "upload_book":
+
+        if type == "edit_photo":
+            current_app.logger.info(f"action:{action}, type:{type}, user: {event.source.user_id}")
+            message, valid = upload_book_actions_manager.edit_photo(event.source.user_id, line_bot_api.get_message_content(event.message.id))
+            if not valid:
+                return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_photo", False))
+            cache.pop(event.source.user_id, None)
+            return line_bot_api.reply_message(event.reply_token, message)
+
+        elif type == "edit_photo_continuously":
+            current_app.logger.info(f"action:{action}, type:{type}, user: {event.source.user_id}")
+            message, valid = upload_book_actions_manager.edit_photo(event.source.user_id, line_bot_api.get_message_content(event.message.id))
+            if not valid:
+                return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_photo", False))
+            #Turn to edit category
+            cache[event.source.user_id] = [action, "edit_category_continuously"]
+            return line_bot_api.reply_message(event.reply_token, message + upload_book_actions_manager.begin_edit(event.source.user_id, "begin_edit_category", True))
