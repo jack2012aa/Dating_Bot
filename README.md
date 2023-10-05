@@ -10,7 +10,7 @@ This service is on Line application, based on [__Messaging API__](https://develo
 This sample codes provides a book exchange event. Customers can upload a book they want to share/exchange and pair with another book they are interest in.
 
 ## Structure
-
+![image](https://github.com/jack2012aa/Dating_Bot/blob/reconstruct/result/structures.png)
 
 `app.py` uses Flask to accept messages from Messaging API and routes them to `services.line_message_handler`
 
@@ -20,7 +20,10 @@ This sample codes provides a book exchange event. Customers can upload a book th
 `models` connects to a database and provides `services` essential information.
 
 ## Result
-
+![image](https://github.com/jack2012aa/Dating_Bot/blob/reconstruct/result/IMG_3111.PNG)
+![image](https://github.com/jack2012aa/Dating_Bot/blob/reconstruct/result/IMG_3112.JPG)
+![image](https://github.com/jack2012aa/Dating_Bot/blob/reconstruct/result/IMG_3113.PNG)
+![image](https://github.com/jack2012aa/Dating_Bot/blob/reconstruct/result/IMG_3114.PNG)
 
 
 ## User replys
