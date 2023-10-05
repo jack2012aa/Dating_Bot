@@ -36,7 +36,7 @@ Furthermore, in my own opinion,
 
 3. the procedure of events should be more modelized to reduce the difficulty on establishing new events.
 
-## Authers
+## Authors
 Idea from Ya-Chi Wu\
 Coded by Chang-Yu Huang\
 Picture by Wan-Chian Zhang
