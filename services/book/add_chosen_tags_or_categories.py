@@ -16,10 +16,10 @@ def add_chosen_tags_or_categories(event: PostbackEvent, type: str, value: str):
             cache.get(event.source.user_id)[3] = choose(cache.get(event.source.user_id)[3], value)
     else:
         if type == "choose_categories":
-            for category in models.book.get_all_categories():
+            for category in models.exchange_book.get_all_categories():
                 cache.get(event.source.user_id)[2] = choose(cache.get(event.source.user_id)[2], category)
         else:
-            for tag in models.book.get_all_tags():
+            for tag in models.exchange_book.get_all_tags():
                 cache.get(event.source.user_id)[3] = choose(cache.get(event.source.user_id)[3], tag)
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Chosen"]))
     return 0

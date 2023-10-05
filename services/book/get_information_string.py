@@ -9,9 +9,9 @@ def get_information_string(userID: str, editting: bool, upload_time: str = None)
     :param str upload_time: If editting = False, upload_time must be specified.
     '''
 
-    if editting and models.book.has_editting_book(userID):
-        info = list(map(lambda x: "尚未填寫" if x == None else x, models.book.get_editting_book_information(userID, all = True)))
-        tags = models.book.get_editting_tags(userID)
+    if editting and models.exchange_book.has_editting_book(userID):
+        info = list(map(lambda x: "尚未填寫" if x == None else x, models.exchange_book.get_editting_book_information(userID, all = True)))
+        tags = models.exchange_book.get_editting_tags(userID)
         if tags[0] == None:
             tags_string = "尚未填寫"
         else:
@@ -21,8 +21,8 @@ def get_information_string(userID: str, editting: bool, upload_time: str = None)
         return [string, info[3]]
 
     elif not editting:
-        info = models.book.get_book_information(userID, upload_time, all = True)
-        tags = models.book.get_book_tags(userID, upload_time)
+        info = models.exchange_book.get_book_information(userID, upload_time, all = True)
+        tags = models.exchange_book.get_book_tags(userID, upload_time)
         if tags[0] == None:
             tags_string = "尚未填寫"
         else:

@@ -6,7 +6,7 @@ def begin_edit(event: PostbackEvent, type:str):
     '''Begin edit editting book's information.'''
 
     cache[event.source.user_id] = ["upload_book", type]
-    value = models.book.get_editting_book_information(event.source.user_id, [type])[0]
+    value = models.exchange_book.get_editting_book_information(event.source.user_id, [type])[0]
 
     field_dict = {
         "name":"書名",

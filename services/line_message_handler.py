@@ -2,7 +2,7 @@ from flask import abort, current_app
 from linebot import (LineBotApi, WebhookHandler)
 from linebot.models import FollowEvent, PostbackEvent, MessageEvent, TextMessage, ImageMessage
 from linebot.exceptions import (InvalidSignatureError)
-from . import config, user_actions_manager, upload_book_actions_manager
+from . import config, user_actions_manager, upload_book_actions_manager, find_book_actions_manager
 
 '''
 Handle all line events and log them.
@@ -183,6 +183,44 @@ def handle_postback(event: PostbackEvent):
         elif type == "upload":
             current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
             return line_bot_api.reply_message(event.reply_token, upload_book_actions_manager.upload(event.source.user_id)[0])
+
+    elif action == "find_book":
+
+        message, valid = find_book_actions_manager.is_valid(event.source.user_id)
+        if not valid:
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, message)
+
+        if type == find_book_actions_manager.MY_BOOK:
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, find_book_actions_manager.get_my_book(event.source.user_id))
+
+        elif type == find_book_actions_manager.CHECK_DELETE:
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, find_book_actions_manager.check_delete(data[2].split("=")[1]))
+
+        elif type == find_book_actions_manager.DELETE:
+            current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+            return line_bot_api.reply_message(event.reply_token, find_book_actions_manager.delete(data[2].split("=")[1])[0])
+
+        elif type == find_book_actions_manager.BEGIN_FIND_BOOK:
+            status = cache.get(event.source.user_id, None)
+            if status == None or status[0] != "find_book" or status[1] != find_book_actions_manager.BEGIN_FIND_BOOK:
+                current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}")
+                message = find_book_actions_manager.begin_find_book(event.source.user_id)
+            else:
+                current_app.logger.info(f"action: {action}, type: {type}, user: {event.source.user_id}, chosen_categories: {status[2]['chosen_categories']}, chosen_tags: {status[2]['chosen_tags']}")
+                message = find_book_actions_manager.begin_find_book(event.source.user_id, status[2]["chosen_categories"], status[2]['chosen_tags'])
+            return line_bot_api.reply_message(event.reply_token, message)
+
+        elif type == find_book_actions_manager.BEGIN_CHOOSE_CATEGORIES:
+
+
+        elif type == find_book_actions_manager.BEGIN_CHOOSE_TAGS:
+
+
+        elif type == find_book_actions_manager.CHOOSE_CATEGORY:
+
 
     elif action == "act_info":
 

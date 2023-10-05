@@ -64,10 +64,10 @@ def is_valid(userID: str):
     if not models.user.is_profile_finished(userID):
         return [TextSendMessage(text_dict["Profile not finished"])], False
     
-    if models.book.has_book(userID, True):
+    if models.exchange_book.has_book(userID, True):
         return [TextSendMessage(text_dict["Already have book"])], False
     
-    if models.book.has_accept_invitation(userID):
+    if models.exchange_book.has_accept_invitation(userID):
         return [TextSendMessage(text_dict["Already exchanged today"])], False
 
     return [], True
@@ -84,7 +84,7 @@ def choose_what_to_edit(userID: str):
     green_url = s3.generate_presigned_url(ClientMethod = "get_object", ExpiresIn = 60, Params = {"Bucket": "linedatingapp", "Key": "green.png"})
 
     #Set NULL column with red_url, not Null with green_url
-    infos = models.book.get_editting_book_information(userID, all = True)
+    infos = models.exchange_book.get_editting_book_information(userID, all = True)
     if infos[0] != None:
         url_list = []
         for i in range(1, 5):
@@ -93,7 +93,7 @@ def choose_what_to_edit(userID: str):
             else:
                 url_list.append(green_url)
 
-        tag = models.book.get_editting_tags(userID)[0]
+        tag = models.exchange_book.get_editting_tags(userID)[0]
         if tag == None:
             url_list.append(red_url)
         else:
@@ -176,26 +176,26 @@ def begin_edit(userID: str, type: str, continuously: bool = False):
     #Get present book info
     type = type[11:]
     if type == "tag":
-        tags = models.book.get_editting_tags(userID)
+        tags = models.exchange_book.get_editting_tags(userID)
         if tags[0] == None:
             present = None
         else:
             present = "、".join(tags)
     else:
-        present = models.book.get_editting_book_information(userID, [type])[0]
+        present = models.exchange_book.get_editting_book_information(userID, [type])[0]
     
     #Prepare quick replies
     quick_replies = []
     if type == "category":
-        categories = models.book.get_all_categories()
+        categories = models.exchange_book.get_all_categories()
         for category in categories:
             quick_replies.append(QuickReplyButton(action = PostbackAction(label = category, display_text = category, data = f"action=upload_book&type=edit_{type}&value={category}")))
         if continuously:
             quick_replies.append(QuickReplyButton(action = PostbackAction(label = "跳過", display_text = "跳過", data = "action=upload_book&type=skip")))
         quick_replies.append(cancel_quick_reply_button)
     elif type == "tag":
-        tags = models.book.get_all_tags()
-        chosen_tags = models.book.get_editting_tags(userID)
+        tags = models.exchange_book.get_all_tags()
+        chosen_tags = models.exchange_book.get_editting_tags(userID)
         #Get green and red image url
         s3 = boto3.client("s3", aws_access_key_id = config["aws_access_key_id"], aws_secret_access_key = config["aws_secret_access_key"])
         red_url = s3.generate_presigned_url(ClientMethod = "get_object", ExpiresIn = 60, Params = {"Bucket": "linedatingapp", "Key": "red.png"})
@@ -240,7 +240,7 @@ def edit_name(userID: str, name: str):
     if len(name) > 100:
         return [TextSendMessage(text_dict["Name too long"])], False
     
-    ok = models.book.insert_or_update_editting_book(userID, "name", name)
+    ok = models.exchange_book.insert_or_update_editting_book(userID, "name", name)
     if not ok:
         return [TextSendMessage(text_dict["Unknown error"])], False
     return [TextSendMessage(text_dict["Edit successfully"].format(value = name))], True
@@ -256,7 +256,7 @@ def edit_summary(userID: str, summary: str):
     if len(summary) > 1000:
         return [TextSendMessage(text_dict["Summary too long"])], False
     
-    ok = models.book.insert_or_update_editting_book(userID, "summary", summary)
+    ok = models.exchange_book.insert_or_update_editting_book(userID, "summary", summary)
     if not ok:
         return [TextSendMessage(text_dict["Unknown error"])], False
     return [TextSendMessage(text_dict["Edit successfully"].format(value = summary))], True
@@ -271,7 +271,7 @@ def edit_photo(userID: str, photo):
     s3 = boto3.client("s3", aws_access_key_id = config["aws_access_key_id"], aws_secret_access_key = config["aws_secret_access_key"])
 
     #Delete old photo
-    photo_dir = models.book.get_editting_book_information(userID, ["photo"])[0]
+    photo_dir = models.exchange_book.get_editting_book_information(userID, ["photo"])[0]
     if photo_dir != None:
         s3.delete_object(Bucket = "linedatingapp", Key = photo_dir)
 
@@ -281,7 +281,7 @@ def edit_photo(userID: str, photo):
     s3.upload_fileobj(photo, "linedatingapp", photo_dir)
     photo.close()
 
-    ok = models.book.insert_or_update_editting_book(userID, "photo", photo_dir)
+    ok = models.exchange_book.insert_or_update_editting_book(userID, "photo", photo_dir)
     if not ok:
         return [TextSendMessage(text_dict["Unknown error"])], False
     return [TextSendMessage(text_dict["Upload photo successfully"])], True
@@ -293,10 +293,10 @@ def edit_category(userID: str, category: str):
     :param str category: book's category, must be declared in the database
     '''
 
-    categories = models.book.get_all_categories()
+    categories = models.exchange_book.get_all_categories()
     if category not in categories:
         return [TextSendMessage(text_dict["Unknown error"])], False
-    ok = models.book.insert_or_update_editting_book(userID, "category", category)
+    ok = models.exchange_book.insert_or_update_editting_book(userID, "category", category)
     if not ok:
         return [TextSendMessage(text_dict["Unknown error"])], False
     return [TextSendMessage(text_dict["Edit successfully"].format(value = category))], True
@@ -311,17 +311,17 @@ def edit_tag(userID: str, tag: str):
     :param str tag: book's tag, must be declared in the database
     '''
 
-    tags = models.book.get_all_tags()
+    tags = models.exchange_book.get_all_tags()
     if tag not in tags:
         return [TextSendMessage(text_dict["Unknown error"])], False
     
     try:
-        chosen_tags = models.book.get_editting_tags(userID)
+        chosen_tags = models.exchange_book.get_editting_tags(userID)
         if tag in chosen_tags:
-            models.book.delete_editting_tag(userID, tag)
+            models.exchange_book.delete_editting_tag(userID, tag)
             return [TextSendMessage(text_dict["Delete tag"].format(tag = tag))], True
         else:
-            models.book.insert_editting_tag(userID, tag)
+            models.exchange_book.insert_editting_tag(userID, tag)
             return [TextSendMessage(text_dict["Insert tag"].format(tag = tag))], True
     except:
         return [TextSendMessage(text_dict["Unknown error"])], False
@@ -343,7 +343,7 @@ def begin_upload(userID: str):
     :param str userID: line user id
     '''
 
-    book = models.book.get_editting_book_information(userID, all = True)
+    book = models.exchange_book.get_editting_book_information(userID, all = True)
     if len(book) <= 1:
         return [TextSendMessage(text_dict["Don't have editting book"])]
     
@@ -357,7 +357,7 @@ def begin_upload(userID: str):
         result.append(ImageSendMessage(url, url))
     
     #Get tags
-    tags = models.book.get_editting_tags(userID)
+    tags = models.exchange_book.get_editting_tags(userID)
     if tags[0] == None:
         tags = "尚未設定"
     else:
@@ -381,10 +381,10 @@ def upload(userID: str):
     :return a list of message and bool indicates whether upload successfully
     '''
 
-    if models.book.has_empty_column(userID):
+    if models.exchange_book.has_empty_column(userID):
         return [TextSendMessage(text_dict["Empty column"])], False
 
-    if models.book.upload_book(userID):
+    if models.exchange_book.upload_book(userID):
         return [TextSendMessage(text_dict["Upload book successfully"])], True
     else:
         return [TextSendMessage(text_dict["Unknown error"])], False

@@ -38,7 +38,7 @@ routes.init_app(app)
 revert_scheduler = BackgroundScheduler()
 def revert():
     models.database.ping(True)
-    models.book.revert_books_and_invitations()
+    models.exchange_book.revert_books_and_invitations()
 revert_scheduler.add_job(func = revert, trigger = "cron", hour = "0", minute = "0")
 revert_scheduler.start()
 

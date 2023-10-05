@@ -6,9 +6,9 @@ def begin_choose_tags_or_categories(event: PostbackEvent, type: str):
     '''Show choosable tags/categories'''
 
     if type == "categories":
-        choices = models.book.get_all_categories()
+        choices = models.exchange_book.get_all_categories()
     elif type == "tags":
-        choices = models.book.get_all_tags()
+        choices = models.exchange_book.get_all_tags()
 
     quick_reply_buttons = []
     for choice in choices:

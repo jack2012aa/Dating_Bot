@@ -17,13 +17,13 @@ def find_books(event: PostbackEvent):
     tags = cache.get(event.source.user_id)[3]
     gender = models.user.get_user_profiles(event.source.user_id, ["expect_gender"])[0]
     expect_gender = models.user.get_user_profiles(event.source.user_id, ["gender"])[0]
-    books = models.book.get_books(event.source.user_id, gender, expect_gender, categories, tags)
+    books = models.exchange_book.find_books(event.source.user_id, gender, expect_gender, categories, tags)
     if books == None:
         cache.pop(event.source.user_id, None)
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["No such books"]))
 
     for book in books:
-        book.append(models.book.get_book_tags(book[3], book[4]))
+        book.append(models.exchange_book.get_book_tags(book[3], book[4]))
 
     result_length = len(books)
     book_carousel, books = get_book_carousels.get_book_carousels(books, True)

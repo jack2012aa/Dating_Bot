@@ -10,14 +10,14 @@ def show_invitations(event: PostbackEvent, next_page: bool = False):
     '''
 
     if not next_page:
-        invitors = models.book.get_all_invitations(event.source.user_id)
+        invitors = models.exchange_book.get_all_invitations(event.source.user_id)
         if invitors == None:
             return line_bot_api.reply_message(event.reply_token, TextSendMessage(text_dict["No invite"]))
         else:
             books = []
             for invitor in invitors:
-                book = models.book.get_book_information(invitor[0], invitor[1], ["photo", "name", "category", "userID", "upload_time"])
-                tags = models.book.get_book_tags(invitor[0], invitor[1])
+                book = models.exchange_book.get_book_information(invitor[0], invitor[1], ["photo", "name", "category", "userID", "upload_time"])
+                tags = models.exchange_book.get_book_tags(invitor[0], invitor[1])
                 book.append(tags)
                 books.append(book)
     else:

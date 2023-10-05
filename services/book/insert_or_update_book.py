@@ -8,6 +8,6 @@ def insert_or_update_book(event: Event, type: str, value: str):
     cache.pop(event.source.user_id, None)
     if type == "choose_category":
         type = "category"
-    models.book.insert_or_update_editting_book(event.source.user_id, type, value)
+    models.exchange_book.insert_or_update_editting_book(event.source.user_id, type, value)
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text = text_dict["Upload successfully"].format(value = value)))
     return 0

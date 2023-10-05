@@ -6,7 +6,7 @@ from linebot.models import PostbackEvent, TextSendMessage, ImageSendMessage, Qui
 def get_my_book(event: PostbackEvent):
     '''Reply content of usesr's book and delete button'''
 
-    book = models.book.get_newest_book(event.source.user_id)
+    book = models.exchange_book.get_newest_book(event.source.user_id)
     text, photo = get_information_string.get_information_string(book[0], False, book[1])
     s3 = boto3.client("s3", aws_access_key_id = config["aws_access_key_id"], aws_secret_access_key = config["aws_secret_access_key"])
     url = s3.generate_presigned_url(ClientMethod = "get_object", ExpiresIn = 60, Params = {"Bucket": "linedatingapp", "Key": photo})

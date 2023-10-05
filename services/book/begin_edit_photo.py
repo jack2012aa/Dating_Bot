@@ -6,7 +6,7 @@ from linebot.models import PostbackEvent, TextSendMessage, QuickReply, ImageSend
 def begin_edit_photo(event: PostbackEvent):
     '''Return present photo.'''
 
-    photo_dir = models.book.get_editting_book_information(event.source.user_id, ["photo"])[0]
+    photo_dir = models.exchange_book.get_editting_book_information(event.source.user_id, ["photo"])[0]
     if photo_dir == None:
         line_bot_api.reply_message(event.reply_token, 
             [

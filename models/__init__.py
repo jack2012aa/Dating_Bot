@@ -11,4 +11,4 @@ database = pymysql.connect(
     database = config["DATABASE"]
 )
 
-from . import user, book
+from . import user, exchange_book

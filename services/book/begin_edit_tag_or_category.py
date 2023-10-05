@@ -6,11 +6,11 @@ def begin_edit_tag_or_category(event: PostbackEvent, type: str):
     '''Show choosable tags/categories'''
 
     if type == "category":
-        choices = models.book.get_all_categories()
-        value = models.book.get_editting_book_information(event.source.user_id, [type])[0]
+        choices = models.exchange_book.get_all_categories()
+        value = models.exchange_book.get_editting_book_information(event.source.user_id, [type])[0]
     elif type == "tag":
-        choices = models.book.get_all_tags()
-        values = models.book.get_editting_tags(event.source.user_id)
+        choices = models.exchange_book.get_all_tags()
+        values = models.exchange_book.get_editting_tags(event.source.user_id)
         if values[0] == None:
             value = None
         else:
